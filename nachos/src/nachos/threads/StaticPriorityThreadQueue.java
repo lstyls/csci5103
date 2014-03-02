@@ -1,11 +1,10 @@
 package nachos.threads;
-
+import nachos.machine.*;
+import nachos.threads.ThreadedKernel;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.PriorityQueue;
 
-import nachos.machine.*;
-import nachos.threads.StaticPriorityScheduler.ThreadState;
 
 public class StaticPriorityThreadQueue extends ThreadQueue {
 	
@@ -20,8 +19,8 @@ public class StaticPriorityThreadQueue extends ThreadQueue {
 
 		@Override
 		public int compare(KThread t1, KThread t2) {
-			int p1 = ((ThreadState) t1.schedulingState).priority;
-			int p2 = ((ThreadState) t2.schedulingState).priority;
+			int p1 = (ThreadedKernel.scheduler.getPriority(t1));
+			int p2 = (ThreadedKernel.scheduler.getPriority(t2));
 			int comp = p1-p2;
 			
 			if (comp < 0) return -1;
