@@ -37,6 +37,8 @@ public class ThreadedKernel extends Kernel {
 	else
 	    fileSystem = null;
 
+	ThreadedKernel.numThreads = Config.getInteger("Kernel.numThreads");
+	
 	// start threading
 	new KThread(null);
 
@@ -80,6 +82,8 @@ public class ThreadedKernel extends Kernel {
     public static Alarm alarm = null;
     /** Globally accessible reference to the file system. */
     public static FileSystem fileSystem = null;
+    
+    public static int numThreads;
 
     // dummy variables to make javac smarter
     private static RoundRobinScheduler dummy1 = null;
