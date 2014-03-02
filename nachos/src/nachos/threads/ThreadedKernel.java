@@ -20,7 +20,13 @@ public class ThreadedKernel extends Kernel {
     public void initialize(String[] args) {
 	// set scheduler
 	String schedulerName = Config.getString("ThreadedKernel.scheduler");
-	scheduler = (Scheduler) Lib.constructObject(schedulerName);
+	if (schedulerName.equals("nachos.threads.StaticPriorityScheduler")) {
+		scheduler = (nachos.threads.StaticPriorityScheduler) Lib.constructObject(schedulerName);
+		((StaticPriorityScheduler) scheduler).setPriorityMaximum(Config.getInteger("StaticPriorityScheduler.maxPriority", 7));
+	}
+	else {
+		scheduler = (Scheduler) Lib.constructObject(schedulerName);
+	}
 
 	// set fileSystem
 	String fileSystemName = Config.getString("ThreadedKernel.fileSystem");
