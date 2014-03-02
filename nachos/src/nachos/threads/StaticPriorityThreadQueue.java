@@ -3,7 +3,6 @@ package nachos.threads;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.PriorityQueue;
-import java.util.concurrent.PriorityBlockingQueue;
 
 import nachos.machine.*;
 import nachos.threads.StaticPriorityScheduler.ThreadState;
@@ -11,10 +10,10 @@ import nachos.threads.StaticPriorityScheduler.ThreadState;
 public class StaticPriorityThreadQueue extends ThreadQueue {
 	
 	private SingleLevelThreadComparator tComp = new SingleLevelThreadComparator();
-	private PriorityQueue waitQueue = new PriorityQueue<KThread>();
+	private PriorityQueue<KThread> waitQueue = new PriorityQueue<KThread>(ThreadedKernel.numThreads, tComp);
 
 	public StaticPriorityThreadQueue(boolean transferPriority) {
-		// do nothing in constructor
+		
 	}
 
 	protected class SingleLevelThreadComparator implements Comparator<KThread>{
@@ -37,25 +36,30 @@ public class StaticPriorityThreadQueue extends ThreadQueue {
 	
 	@Override
 	public void waitForAccess(KThread thread) {
-		// TODO Auto-generated method stub
+		Lib.assertTrue(Machine.interrupt().disabled());
 		
+		waitQueue.add(thread);
 	}
 
-	@Override
+
 	public KThread nextThread() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void acquire(KThread thread) {
-		// TODO Auto-generated method stub
+		Lib.assertTrue(Machine.interrupt().disabled());
 		
+		return waitQueue.poll();
 	}
 
-	@Override
+
+	public void acquire(KThread thread) {
+		Lib.assertTrue(Machine.interrupt().disabled());
+		
+		Lib.assertTrue(waitQueue.isEmpty());
+	}
+
 	public void print() {
-		// TODO Auto-generated method stub
+		Lib.assertTrue(Machine.interrupt().disabled());
+		
+		for (Iterator<KThread> i = waitQueue.iterator(); i.hasNext(); )
+			System.out.print(i.next() + " ");
 		
 	}
 
