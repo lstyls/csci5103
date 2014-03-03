@@ -40,6 +40,9 @@ public class ThreadedKernel extends Kernel {
 	else {
 		scheduler = (Scheduler) Lib.constructObject(schedulerName);
 	}
+	
+	// assign reference in scheduler to the kernel
+	((StaticPriorityScheduler) scheduler).kernel = this;
 
 	// set fileSystem
 	String fileSystemName = Config.getString("ThreadedKernel.fileSystem");
@@ -109,11 +112,13 @@ public class ThreadedKernel extends Kernel {
     
     protected void logprintln(String str) {
     	logWriter.println(str);
+    	logWriter.flush();
     }
     
     
     protected void logprint(String str) {
     	logWriter.print(str);
+    	logWriter.flush();
     }
     
     /**
