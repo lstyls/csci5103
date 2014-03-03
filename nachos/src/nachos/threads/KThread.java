@@ -49,6 +49,8 @@ public class KThread {
 	else {
 	    readyQueue = ThreadedKernel.scheduler.newThreadQueue(false);
 	    readyQueue.acquire(this);	    
+	    ThreadedKernel.scheduler.getPriority(this);
+	    ((StaticPriorityScheduler.ThreadState) this.schedulingState).logScheduled();
 
 	    currentThread = this;
 	    tcb = TCB.currentTCB();
@@ -102,6 +104,10 @@ public class KThread {
      */     
     public String getName() {
 	return name;
+    }
+    
+    public int getID() {
+    	return this.id;
     }
 
     /**
@@ -344,6 +350,7 @@ public class KThread {
 		  + " to: " + toString());
 
 	currentThread = this;
+	((StaticPriorityScheduler.ThreadState) this.schedulingState).logScheduled();
 
 	tcb.contextSwitch();
 
