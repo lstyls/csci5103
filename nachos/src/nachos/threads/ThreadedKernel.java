@@ -1,5 +1,9 @@
 package nachos.threads;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+
 import nachos.machine.*;
 
 /**
@@ -9,6 +13,15 @@ public class ThreadedKernel extends Kernel {
     /**
      * Allocate a new multi-threaded kernel.
      */
+	
+	
+	/**
+	 * Class variables added for assignment 1.
+	 */
+	
+	private PrintWriter logWriter;
+	
+	
     public ThreadedKernel() {
 	super();
     }
@@ -38,6 +51,28 @@ public class ThreadedKernel extends Kernel {
 	    fileSystem = null;
 
 	ThreadedKernel.numThreads = Config.getInteger("Kernel.numThreads");
+	
+	
+	/* Initialize logfile */
+	String logFileName = Config.getString("statistics.logFile");
+	
+	if (logFileName == null) {
+		logWriter = new PrintWriter(System.out);
+	}
+	
+	else {
+		try{
+			logWriter = new PrintWriter(new FileWriter(logFileName));
+		}
+		catch (IOException err) {
+			System.err.println("Error creating logfile:");
+			System.err.println(err);
+		}
+	}
+	
+	// TODO: remove commented test code
+//	logWriter.write("THIS IS A TEST");
+//	logWriter.flush();
 	
 	// start threading
 	new KThread(null);
@@ -73,7 +108,8 @@ public class ThreadedKernel extends Kernel {
      * Terminate this kernel. Never returns.
      */
     public void terminate() {
-	Machine.halt();
+    	logWriter.flush();
+    	Machine.halt();
     }
 
     /** Globally accessible reference to the scheduler. */
