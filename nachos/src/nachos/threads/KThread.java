@@ -444,16 +444,6 @@ public class KThread {
     private static int numCreated = 0;
 
     
-    /** Track statistics for this thread */
-    private int arrivalTime;
-    private int totalWaitTime;
-    private int totalRunningTime;
-    
-    /** Track statistics for all threads */
-    private static int globalTotalWaitTime = 0;
-    private static int globalTotalTurnaroundTime = 0;
-    private static int globalMaxWaitTime = 0;
-    
     private static ThreadQueue readyQueue = null;
     private static KThread currentThread = null;
     private static KThread toBeDestroyed = null;
