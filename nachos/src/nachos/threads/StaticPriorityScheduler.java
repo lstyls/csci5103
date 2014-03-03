@@ -10,6 +10,10 @@ public class StaticPriorityScheduler extends Scheduler {
 	 * they are not supported in the scheduling description.
 	 */
 	
+	/** Pointer to the kernel */
+	
+	ThreadedKernel kernel;
+	
 	
 	/**
 	 * 	Track running statistics for threads.
@@ -117,22 +121,54 @@ public class StaticPriorityScheduler extends Scheduler {
 		 * Variables to track statistics for a thread.
 		 */
 		private long arrivalTime;
-		private long departTime;
 		private long lastScheduled;
 		private long lastEnqueued;
+		private long totalWait;
+		private long totalRun;
 		
 		protected KThread thread;
 		protected int priority;
 		
-		protected void logQueued() {
-			
-		}
 		
 		public ThreadState(KThread thread) {
 			this.thread = thread;
 			setPriority(priorityDefault);
+			arrivalTime = -1;
+			totalWait = 0;
+			totalRun = 0;
+			lastScheduled = -1;
+			lastEnqueued = -1;
+		}
+				
+		/**
+		 * Updates statistics and prints to kernel logfile. To be in KThread when the thread is scheduled to run.
+		 */
+		protected void logScheduled() {
+			long curtime = kernel.getTime();
+			
+			lastScheduled = curtime;
+			
+			if (lastEnqueued > 0) totalWait += lastEnqueued - curtime;
+			
+			kernel.logprint(String.format("%d,%s(%d),%d\n", curtime, thread.getName(),
+					thread.getID(), priority));
 		}
 		
+		
+		/**	Update waiting statistics when the thread is placed in the queue. 	 */
+		protected void logEnqueued() {
+			long curtime = kernel.getTime();
+			
+			if (lastEnqueued < 0) {
+				// Thread has not been scheduled for the first time yet.
+				arrivalTime = curtime;
+			}
+			else {
+				totalRun += lastScheduled - curtime;
+			}
+			lastEnqueued = curtime;
+		}
+
 		public int getPriority() {
 			return this.priority;
 		}
