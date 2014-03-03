@@ -103,7 +103,17 @@ public class ThreadedKernel extends Kernel {
      */
     public void run() {
     }
-
+    
+    
+    protected void logprintln(String str) {
+    	logWriter.println(str);
+    }
+    
+    
+    protected void logprint(String str) {
+    	logWriter.print(str);
+    }
+    
     /**
      * Terminate this kernel. Never returns.
      */
