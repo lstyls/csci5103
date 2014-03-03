@@ -50,6 +50,9 @@ public class KThread {
 	    readyQueue = ThreadedKernel.scheduler.newThreadQueue(false);
 	    readyQueue.acquire(this);	    
 	    ThreadedKernel.scheduler.getPriority(this);
+	    
+	    /* test comment */
+	    
 	    ((StaticPriorityScheduler.ThreadState) this.schedulingState).logScheduled();
 
 	    currentThread = this;
