@@ -430,7 +430,7 @@ public class KThread {
      * ready (on the ready queue but not running), running, or blocked (not
      * on the ready queue and not running).
      */
-    private int status = statusNew;
+    protected int status = statusNew;
     private String name = "(unnamed thread)";
     private Runnable target;
     private TCB tcb;
