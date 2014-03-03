@@ -51,7 +51,8 @@ public class ThreadedKernel extends Kernel {
 	    fileSystem = null;
 
 	ThreadedKernel.numThreads = Config.getInteger("Kernel.numThreads");
-	
+	/** Grab the time */
+	time = System.currentTimeMillis();
 	
 	/* Initialize logfile */
 	String logFileName = Config.getString("statistics.logFile");
@@ -111,7 +112,14 @@ public class ThreadedKernel extends Kernel {
     	logWriter.flush();
     	Machine.halt();
     }
-
+    
+    /** method to return time since kernel initialized */
+    public long getTime(){
+    	return time;
+    }
+    
+    /** Time of Initialization of the Kernel */
+    public long time = 0;
     /** Globally accessible reference to the scheduler. */
     public static Scheduler scheduler = null;
     /** Globally accessible reference to the alarm. */
