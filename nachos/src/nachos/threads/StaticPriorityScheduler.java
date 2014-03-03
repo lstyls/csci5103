@@ -10,6 +10,26 @@ public class StaticPriorityScheduler extends Scheduler {
 	 * they are not supported in the scheduling description.
 	 */
 	
+	
+	/**
+	 * 	Track running statistics for threads.
+	 * 
+	 * 		nthreads: running total number of threads to have completed, updated on thread death
+	 * 
+	 * 		totalRunTime: running total of times threads have spent on CPU, updated on thread death
+	 * 
+	 * 		totalTurnTime: as totalRunTime, but with turnaround times
+	 * 
+	 * 		maxWaitingTime: to be compared and updated on thread death
+	 */
+	
+	
+	int nthreads;
+	long totalRunTime;
+	long totalTurnTime;
+	long maxWaitingTime;
+	
+	
 	/** Barebones constructor. */
 	public StaticPriorityScheduler() {
 	}
@@ -93,8 +113,20 @@ public class StaticPriorityScheduler extends Scheduler {
 	/** Inner class tracks state variables associated with a specific thread. */
 	protected class ThreadState {
 		
+		/**
+		 * Variables to track statistics for a thread.
+		 */
+		private long arrivalTime;
+		private long departTime;
+		private long lastScheduled;
+		private long lastEnqueued;
+		
 		protected KThread thread;
 		protected int priority;
+		
+		protected void logQueued() {
+			
+		}
 		
 		public ThreadState(KThread thread) {
 			this.thread = thread;
