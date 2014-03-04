@@ -53,7 +53,7 @@ public class KThread {
 
 			/* test comment */
 
-			((StaticPriorityScheduler.ThreadState) this.schedulingState).logScheduled();
+			((StaticPriorityScheduler.ThreadState) this.thdSchedState).logScheduled();
 
 			currentThread = this;
 			tcb = TCB.currentTCB();
@@ -223,7 +223,7 @@ public class KThread {
 
 		Lib.assertTrue(toBeDestroyed == null);
 		toBeDestroyed = currentThread;
-		((StaticPriorityScheduler.ThreadState) toBeDestroyed.schedulingState).logFinished();
+		((StaticPriorityScheduler.ThreadState) toBeDestroyed.thdSchedState).logFinished();
 
 		currentThread.status = statusFinished;
 
@@ -295,7 +295,7 @@ public class KThread {
 		status = statusReady;
 		if (this != idleThread) {
 			readyQueue.waitForAccess(this);
-			((StaticPriorityScheduler.ThreadState) this.schedulingState).logEnqueued();
+			((StaticPriorityScheduler.ThreadState) this.thdSchedState).logEnqueued();
 		}
 
 
@@ -381,7 +381,7 @@ public class KThread {
 				+ " to: " + toString());
 
 		currentThread = this;
-		((StaticPriorityScheduler.ThreadState) this.schedulingState).logScheduled();
+		this.thdSchedState.logScheduled();
 
 		tcb.contextSwitch();
 
@@ -462,9 +462,11 @@ public class KThread {
 
 	/**
 	 * Additional state used by schedulers.
+	 * Leaving this here to keep machine startup test happy.
 	 *
 	 * @see	nachos.threads.PriorityScheduler.ThreadState
 	 */
+	public PriorityScheduler.ThreadState thdSchedState = null;
 	public Object schedulingState = null;
 
 	private static final int statusNew = 0;

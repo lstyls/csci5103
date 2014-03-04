@@ -22,21 +22,13 @@ public class StaticPriorityScheduler extends PriorityScheduler {
 		super();
 	}
 
-	/**
-	 * @param maxp
-	 */
-	public StaticPriorityScheduler(int maxp) {
-		super(maxp);
-		// TODO Auto-generated constructor stub
-	}
 
 	/* (non-Javadoc)
 	 * @see nachos.threads.PriorityScheduler#newThreadQueue(boolean)
 	 */
 	@Override
 	public PriorityThreadQueue newThreadQueue(boolean transferPriority) {
-		// TODO Auto-generated method stub
-		return null;
+		return new StaticPriorityThreadQueue(transferPriority);
 	}
 	
 	

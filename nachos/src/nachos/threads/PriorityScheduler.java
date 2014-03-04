@@ -60,7 +60,7 @@ public abstract class PriorityScheduler extends Scheduler {
 	public static int priorityMaximum = 7;    
 	
 	/** Reference to the kernel that instantiated the scheduler. */
-	private ThreadedKernel kernel;
+	protected ThreadedKernel kernel;
 	
 	/**
 	 * Allocate a new priority scheduler.
@@ -72,19 +72,6 @@ public abstract class PriorityScheduler extends Scheduler {
 		maxWaitTime = 0;
 	}
 		
-	/**
-	 * Allocate a new priority scheduler.
-	 * 
-	 * @param	maxp	maximum allowed priority
-	 */
-	public PriorityScheduler(int maxp) {
-		nfinished = 0;
-		totalWaitTime = 0;
-		totalTurnTime = 0;
-		maxWaitTime = 0;
-		priorityMaximum = maxp;
-	}
-	
 	/** Write global stats to kernel logfile for threads managed by the scheduler.
 	 * To be called before kernel terminates.
 	 */
@@ -118,10 +105,10 @@ public abstract class PriorityScheduler extends Scheduler {
 	 * @return	the scheduling state of the specified thread.
 	 */
 	protected ThreadState getThreadState(KThread thread) {
-		if (thread.schedulingState == null)
-			thread.schedulingState = new ThreadState(thread);
+		if (thread.thdSchedState == null)
+			thread.thdSchedState = new ThreadState(thread);
 
-		return (ThreadState) thread.schedulingState;
+		return (ThreadState) thread.thdSchedState;
 	}
 	
 	
@@ -152,6 +139,12 @@ public abstract class PriorityScheduler extends Scheduler {
 		Lib.assertTrue(Machine.interrupt().disabled());
 
 		return getThreadState(thread).getEffectivePriority();
+	}
+	
+	
+	
+	protected void setSchedMaxPriority(int maxp) {
+		PriorityScheduler.priorityMaximum = maxp;
 	}
 	
 	
