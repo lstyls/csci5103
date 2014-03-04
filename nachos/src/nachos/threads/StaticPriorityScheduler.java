@@ -28,14 +28,18 @@ public class StaticPriorityScheduler extends Scheduler {
 	 */
 	
 	
-	int nthreads;
-	long totalRunTime;
-	long totalTurnTime;
-	long maxWaitingTime;
+	private static int nfinished;
+	private static long totalWaitTime;
+	private static long totalTurnTime;
+	private static long maxWaitTime;
 	
 	
 	/** Barebones constructor. */
 	public StaticPriorityScheduler() {
+		nfinished = 0;
+		totalWaitTime = 0;
+		totalTurnTime = 0;
+		maxWaitTime = 0;
 	}
 
 	
@@ -123,8 +127,8 @@ public class StaticPriorityScheduler extends Scheduler {
 		private long arrivalTime;
 		private long lastScheduled;
 		private long lastEnqueued;
-		private long totalWait;
-		private long totalRun;
+		private long thdTotWait;
+		private long thdTotRun;
 		
 		protected KThread thread;
 		protected int priority;
@@ -134,8 +138,8 @@ public class StaticPriorityScheduler extends Scheduler {
 			this.thread = thread;
 			setPriority(priorityDefault);
 			arrivalTime = -1;
-			totalWait = 0;
-			totalRun = 0;
+			thdTotWait = 0;
+			thdTotRun = 0;
 			lastScheduled = -1;
 			lastEnqueued = -1;
 		}
@@ -148,7 +152,7 @@ public class StaticPriorityScheduler extends Scheduler {
 			
 			lastScheduled = curtime;
 			
-			if (lastEnqueued > 0) totalWait += lastEnqueued - curtime;
+			if (lastEnqueued > 0) thdTotWait += curtime - lastEnqueued;
 			
 			kernel.logprint(String.format("%d,%s(%d),%d\n", curtime, thread.getName(),
 					thread.getID(), priority));
@@ -162,13 +166,35 @@ public class StaticPriorityScheduler extends Scheduler {
 			if (lastEnqueued < 0) {
 				// Thread has not been scheduled for the first time yet.
 				arrivalTime = curtime;
+				lastScheduled = curtime;
 			}
 			else {
-				totalRun += lastScheduled - curtime;
+				thdTotRun += curtime - lastScheduled;
 			}
 			lastEnqueued = curtime;
 		}
+		
+		/** Update global statistics from thread and write thread stats to logfile.
+		 *  To be called when thread finishes. 
+		 */
+		protected void logFinished() {
+			long curtime = kernel.getTime();
+			
+			//Lib.assertTrue(arrivalTime>=0,"Trying to log finish of thread with no arrival time.");
+			
+			if (arrivalTime<=0) return;
+			
+			totalTurnTime += curtime - arrivalTime;
+			
+			if (thdTotWait>0) totalWaitTime += thdTotWait;
+			if (thdTotWait>maxWaitTime)  maxWaitTime = thdTotWait;
+			
+			kernel.logprint(String.format("%s(%d),%d,%d,%d,%d\n", thread.getName(), thread.getID(),
+					arrivalTime, thdTotRun+curtime-lastScheduled, thdTotWait, curtime));
+			
+		}
 
+		
 		public int getPriority() {
 			return this.priority;
 		}
