@@ -2,7 +2,7 @@ package nachos.threads;
 
 import nachos.machine.*;
 
-public class StaticPriorityScheduler extends Scheduler {
+public class StaticPriorityScheduler extends PriorityScheduler {
 	
 	/*
 	 * StaticPriorityScheduler does not implement 
@@ -49,10 +49,9 @@ public class StaticPriorityScheduler extends Scheduler {
 		kernel.logprint(String.format("System,%d,%d,%d,%d\n", nfinished, avWait,
 				maxWaitTime, avTurn));
 	}
-
 	
 	/** Allocate new ThreadQueue. */
-	public ThreadQueue newThreadQueue(boolean transferPriority) {
+	public StaticPriorityThreadQueue newThreadQueue(boolean transferPriority) {
 		return new StaticPriorityThreadQueue(transferPriority);
 	}
 	
@@ -65,11 +64,11 @@ public class StaticPriorityScheduler extends Scheduler {
 	 * @param thread the thread whose scheduling state to return.
 	 * @return the scheduling state of the input thread.
 	 */
-	protected ThreadState getThreadState(KThread thread) {
+	protected PriorityScheduler.ThreadState getThreadState(KThread thread) {
 		if (thread.schedulingState == null)
 			thread.schedulingState = new ThreadState(thread);
 		
-		return (ThreadState) thread.schedulingState;
+		return thread.schedulingState;
 	}
 	
 	
@@ -123,109 +122,6 @@ public class StaticPriorityScheduler extends Scheduler {
 		Lib.assertTrue(priority >= priorityMinimum);
 		
 		this.priorityMaximum = priority;
-	}
-	
-	
-	/** Inner class tracks state variables associated with a specific thread. */
-	protected class ThreadState {
-		
-		/**
-		 * Variables to track statistics for a thread.
-		 */
-		private long arrivalTime;
-		private long lastScheduled;
-		private long lastEnqueued;
-		private long thdTotWait;
-		private long thdTotRun;
-		
-		protected KThread thread;
-		protected int priority;
-		
-		
-		public ThreadState(KThread thread) {
-			this.thread = thread;
-			setPriority(priorityDefault);
-			arrivalTime = -1;
-			thdTotWait = 0;
-			thdTotRun = 0;
-			lastScheduled = -1;
-			lastEnqueued = -1;
-		}
-				
-		/**
-		 * Updates statistics and prints to kernel logfile. To be in KThread when the thread is scheduled to run.
-		 */
-		protected void logScheduled() {
-			long curtime = kernel.getTime();
-			
-			lastScheduled = curtime;
-			
-			if (lastEnqueued > 0) thdTotWait += curtime - lastEnqueued;
-			
-			kernel.logprint(String.format("%d,%s(%d),%d\n", curtime, thread.getName(),
-					thread.getID(), priority));
-		}
-		
-		
-		/**	Update waiting statistics when the thread is placed in the queue. 	 */
-		protected void logEnqueued() {
-			long curtime = kernel.getTime();
-			
-			if (lastEnqueued < 0) {
-				// Thread has not been scheduled for the first time yet.
-				arrivalTime = curtime;
-				lastScheduled = curtime;
-			}
-			else {
-				thdTotRun += curtime - lastScheduled;
-			}
-			lastEnqueued = curtime;
-		}
-		
-		/** Update global statistics from thread and write thread stats to logfile.
-		 *  To be called when thread finishes. 
-		 */
-		protected void logFinished() {
-			long curtime = kernel.getTime();
-			nfinished++;
-			
-			//Lib.assertTrue(arrivalTime>=0,"Trying to log finish of thread with no arrival time.");
-			
-			if (arrivalTime<=0) return;
-			
-			totalTurnTime += curtime - arrivalTime;
-			
-			if (thdTotWait>0) totalWaitTime += thdTotWait;
-			if (thdTotWait>maxWaitTime)  maxWaitTime = thdTotWait;
-			
-			kernel.logprint(String.format("%s(%d),%d,%d,%d,%d\n", thread.getName(), thread.getID(),
-					arrivalTime, thdTotRun+curtime-lastScheduled, thdTotWait, curtime));
-			
-		}
-
-		
-		public int getPriority() {
-			return this.priority;
-		}
-		
-		public int getEffectivePriority() {
-			// We aren't worrying about donating priority, so this is the same as vanilla priority.
-			return this.getPriority();
-		}
-		
-		/**
-		 * Sets priority of the thread. 
-		 *  
-		 * @param desired priority of the thread.
-		 */
-		
-		protected void setPriority(int priority) {
-			/*  We don't worry about the priority being outside
-			 * of allowed bounds because this is checked in the 
-			 * enclosing method. */
-			this.priority = priority;
-		}
-		
 	}
 
 }
