@@ -41,6 +41,14 @@ public class StaticPriorityScheduler extends Scheduler {
 		totalTurnTime = 0;
 		maxWaitTime = 0;
 	}
+	
+	
+	protected void logFinalStats() {
+		int avWait = Math.round(((float)totalWaitTime)/nfinished);
+		int avTurn = Math.round(((float)totalTurnTime)/nfinished);
+		kernel.logprint(String.format("System,%d,%d,%d,%d\n", nfinished, avWait,
+				maxWaitTime, avTurn));
+	}
 
 	
 	/** Allocate new ThreadQueue. */
@@ -179,6 +187,7 @@ public class StaticPriorityScheduler extends Scheduler {
 		 */
 		protected void logFinished() {
 			long curtime = kernel.getTime();
+			nfinished++;
 			
 			//Lib.assertTrue(arrivalTime>=0,"Trying to log finish of thread with no arrival time.");
 			
