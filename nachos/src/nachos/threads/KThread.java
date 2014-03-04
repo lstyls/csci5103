@@ -412,11 +412,17 @@ public class KThread {
      */
     public static void selfTest() {
 	Lib.debug(dbgThread, "Enter KThread.selfTest");
+	
+	Machine.interrupt().disable();
+	ThreadedKernel.scheduler.setPriority(7);
+	Machine.interrupt().enable();
 
 	int num= Integer.parseInt(Config.getString("Kernel.numThreads"));
 	for(int i=0; i<num; i++){
 		new KThread(new PingTest(i)).setName("forked thread").fork();
 	}
+	
+	yield();
 
     }
 
