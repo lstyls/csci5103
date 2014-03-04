@@ -206,14 +206,12 @@ public abstract class PriorityScheduler extends Scheduler {
 	 * A <tt>ThreadQueue</tt> that sorts threads by priority.
 	 */
 	protected abstract class PriorityThreadQueue extends ThreadQueue {
-		private ThreadComparator tComp = new ThreadComparator();
-		private PriorityQueue<KThread> waitQueue;
 		
-		private PriorityThreadQueue(boolean transferPriority) {
+		public PriorityThreadQueue(boolean transferPriority) {
 		}
 		
 		/** Comparator used to order threads in priority queue based on priority. */
-		private class ThreadComparator implements Comparator<KThread> {
+		protected class ThreadComparator implements Comparator<KThread> {
 
 			@Override
 			public int compare(KThread t1, KThread t2) {
@@ -236,15 +234,6 @@ public abstract class PriorityScheduler extends Scheduler {
 		public abstract void acquire(KThread thread);
 
 		public abstract KThread nextThread();
-
-		/**
-		 * Return the next thread that <tt>nextThread()</tt> would return,
-		 * without modifying the state of this queue.
-		 *
-		 * @return	the next thread that <tt>nextThread()</tt> would
-		 *		return.
-		 */
-		protected abstract ThreadState pickNextThread();
 
 		public void print() {
 			Lib.assertTrue(Machine.interrupt().disabled());

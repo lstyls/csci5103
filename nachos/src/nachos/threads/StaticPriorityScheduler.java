@@ -1,127 +1,79 @@
+/**
+ * 
+ */
 package nachos.threads;
 
-import nachos.machine.*;
+import nachos.machine.Lib;
+import nachos.machine.Machine;
 
+/**
+ *	Scheduler for Problem 1 of Programming Assignment 1, CSCI5103.
+ *
+ * @author styles
+ *
+ */
 public class StaticPriorityScheduler extends PriorityScheduler {
-	
-	/*
-	 * StaticPriorityScheduler does not implement 
-	 * increasePriority or decreasePriority methods because
-	 * they are not supported in the scheduling description.
-	 */
-	
-	/** Pointer to the kernel */
-	
-	ThreadedKernel kernel;
-	
-	
+
 	/**
-	 * 	Track running statistics for threads.
 	 * 
-	 * 		nthreads: running total number of threads to have completed, updated on thread death
-	 * 
-	 * 		totalRunTime: running total of times threads have spent on CPU, updated on thread death
-	 * 
-	 * 		totalTurnTime: as totalRunTime, but with turnaround times
-	 * 
-	 * 		maxWaitingTime: to be compared and updated on thread death
 	 */
-	
-	
-	private static int nfinished;
-	private static long totalWaitTime;
-	private static long totalTurnTime;
-	private static long maxWaitTime;
-	
-	
-	/** Barebones constructor. */
 	public StaticPriorityScheduler() {
-		nfinished = 0;
-		totalWaitTime = 0;
-		totalTurnTime = 0;
-		maxWaitTime = 0;
+		// TODO Auto-generated constructor stub
+		super();
 	}
-	
-	
-	protected void logFinalStats() {
-		int avWait = Math.round(((float)totalWaitTime)/nfinished);
-		int avTurn = Math.round(((float)totalTurnTime)/nfinished);
-		kernel.logprint(String.format("System,%d,%d,%d,%d\n", nfinished, avWait,
-				maxWaitTime, avTurn));
-	}
-	
-	/** Allocate new ThreadQueue. */
-	public StaticPriorityThreadQueue newThreadQueue(boolean transferPriority) {
-		return new StaticPriorityThreadQueue(transferPriority);
-	}
-	
+
 	/**
-	 *  Return the scheduling state of the input thread.
-	 * 
-	 * If the thread does not yet have a state specified, allocate
-	 * 		a new one and assign it to the thread's schedulingState.
-	 * 
-	 * @param thread the thread whose scheduling state to return.
-	 * @return the scheduling state of the input thread.
+	 * @param maxp
 	 */
-	protected PriorityScheduler.ThreadState getThreadState(KThread thread) {
-		if (thread.schedulingState == null)
-			thread.schedulingState = new ThreadState(thread);
-		
-		return thread.schedulingState;
+	public StaticPriorityScheduler(int maxp) {
+		super(maxp);
+		// TODO Auto-generated constructor stub
 	}
-	
-	
-	/**
-	 * Get priority of input thread.
-	 * 
-	 * @param thread	thread from which to return priority
-	 * 
-	 * @return priority of input thread
+
+	/* (non-Javadoc)
+	 * @see nachos.threads.PriorityScheduler#newThreadQueue(boolean)
 	 */
-	public int getPriority(KThread thread) {
-		Lib.assertTrue(Machine.interrupt().disabled());
-		
-		return getThreadState(thread).getPriority();
-	}
-	
-	/**
-	 * Get effective priority of input thread. Because we don't
-	 * accommodate priority donation, this is equal to the plain
-	 * thread priority.
-	 * 
-	 * @param thread	thread from which to return priority
-	 * 
-	 * @return priority of input thread
-	 */
-	public int getEffectivePriority(KThread thread) {
-		Lib.assertTrue(Machine.interrupt().disabled());
-		
-		return getThreadState(thread).getEffectivePriority();
+	@Override
+	public PriorityThreadQueue newThreadQueue(boolean transferPriority) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 	
 	
-	public void setPriority(KThread thread, int priority) {
-		Lib.assertTrue(Machine.interrupt().disabled());
+	protected class StaticPriorityThreadQueue extends PriorityScheduler.PriorityThreadQueue {
+
+		private PriorityThreadQueue.ThreadComparator tComp = 
+				new PriorityThreadQueue.ThreadComparator();
+		private java.util.PriorityQueue<KThread> waitQueue =
+				new java.util.PriorityQueue<KThread>(ThreadedKernel.numThreads, tComp);
 		
-		Lib.assertTrue(priority >= priorityMinimum && 
-				priority <= priorityMaximum);
+		public StaticPriorityThreadQueue(boolean transferPriority) {
+			super(transferPriority);
+		}
+
+		public void waitForAccess(KThread thread) {
+			Lib.assertTrue(Machine.interrupt().disabled(),
+					"Interrupts not disabled in required critical section.");
+			
+			waitQueue.add(thread);
+		}
+
+		public void acquire(KThread thread) {
+			Lib.assertTrue(Machine.interrupt().disabled(),
+					"Interrupts not disabled in required critical section.");
+			Lib.assertTrue(waitQueue.isEmpty(), 
+					"Attempted to aquire with non-empty wait queue.");			
+		}
+
+		@Override
+		public KThread nextThread() {
+			Lib.assertTrue(Machine.interrupt().disabled(),
+					"Interrupts not disabled in required critical section.");
+			
+			return waitQueue.poll();
+		}
+
 		
-		getThreadState(thread).setPriority(priority);
-	}
-	
-	
-	public static final int priorityDefault = 1;
-		
-	// TODO Modify code so that priorityMaximum is specified in config file
-	private int priorityMaximum = 7;
-	
-	public static final int priorityMinimum = 0;
-	
-	public void setPriorityMaximum(int priority) {
-		Lib.assertTrue(priority >= priorityMinimum);
-		
-		this.priorityMaximum = priority;
 	}
 
 }
