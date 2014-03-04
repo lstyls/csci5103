@@ -1,7 +1,10 @@
 package nachos.threads;
 
 import nachos.machine.*;
+import nachos.threads.StaticPriorityThreadQueue.SingleLevelThreadComparator;
 
+import java.util.Comparator;
+import java.util.PriorityQueue;
 import java.util.TreeSet;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -26,23 +29,21 @@ import java.util.Iterator;
  * A priority scheduler must partially solve the priority inversion problem; in
  * particular, priority must be donated through locks, and through joins.
  */
-public class PriorityScheduler extends Scheduler {
+public abstract class PriorityScheduler extends Scheduler {
 
-	/**
-	 * 	Track running statistics for threads.
-	 * 
-	 * 		nthreads: running total number of threads to have completed, updated on thread death
-	 * 
-	 * 		totalRunTime: running total of times threads have spent on CPU, updated on thread death
-	 * 
-	 * 		totalTurnTime: as totalRunTime, but with turnaround times
-	 * 
-	 * 		maxWaitingTime: to be compared and updated on thread death
-	 */
+	/* * * * * 	Track running statistics for threads. * * * */
 	
+	/** Running total of threads that have finished. */
 	private static int nfinished;
+	
+	/** Running total wait time of scheduled threads. Updated on KThread.finish(). */
 	private static long totalWaitTime;
+	
+	/** Running total turnaround time of scheduled threads. Updated on KThread.finish(). */
 	private static long totalTurnTime;
+	
+	/** Maximum total wait time of any single thread that has finished.
+	 * Updated on KThread.finish(). */
 	private static long maxWaitTime;
 	
 	/**
@@ -56,8 +57,7 @@ public class PriorityScheduler extends Scheduler {
 	/**
 	 * The maximum priority that a thread can have. Can be specified in config file.
 	 */
-	public static int priorityMaximum;    
-	
+	public static int priorityMaximum = 7;    
 	
 	/** Reference to the kernel that instantiated the scheduler. */
 	private ThreadedKernel kernel;
@@ -71,12 +71,11 @@ public class PriorityScheduler extends Scheduler {
 		totalTurnTime = 0;
 		maxWaitTime = 0;
 	}
-	
-	
+		
 	/**
 	 * Allocate a new priority scheduler.
 	 * 
-	 * @param maxp: 	maximum allowed priority
+	 * @param	maxp	maximum allowed priority
 	 */
 	public PriorityScheduler(int maxp) {
 		nfinished = 0;
@@ -85,7 +84,6 @@ public class PriorityScheduler extends Scheduler {
 		maxWaitTime = 0;
 		priorityMaximum = maxp;
 	}
-	
 	
 	/** Write global stats to kernel logfile for threads managed by the scheduler.
 	 * To be called before kernel terminates.
@@ -97,7 +95,6 @@ public class PriorityScheduler extends Scheduler {
 				maxWaitTime, avTurn));
 	}
 	
-	
 
 	/**
 	 * Allocate a new priority thread queue.
@@ -107,9 +104,7 @@ public class PriorityScheduler extends Scheduler {
 	 *					to the owning thread.
 	 * @return	a new priority thread queue.
 	 */
-	public ThreadQueue newThreadQueue(boolean transferPriority) {
-		return new PriorityQueue(transferPriority);
-	}
+	public abstract PriorityThreadQueue newThreadQueue(boolean transferPriority) ;
 	
 
 
@@ -129,8 +124,9 @@ public class PriorityScheduler extends Scheduler {
 		return (ThreadState) thread.schedulingState;
 	}
 	
+	
 	/**
-	 * Get priority of input thread.
+	 * Get priority of specified thread.
 	 * 
 	 * @param thread	thread from which to return priority
 	 * 
@@ -150,7 +146,7 @@ public class PriorityScheduler extends Scheduler {
 	 * 
 	 * @param thread	thread from which to return priority
 	 * 
-	 * @return priority of input thread
+	 * @return priority of specified thread
 	 */
 	public int getEffectivePriority(KThread thread) {
 		Lib.assertTrue(Machine.interrupt().disabled());
@@ -159,9 +155,8 @@ public class PriorityScheduler extends Scheduler {
 	}
 	
 	
-	/** Sets the priority of the specified thread. Will fail
-	 * if new priority if outside allowed bounds.
-	 */
+	/** Sets the priority of the specified thread. Will throw
+	 * assertion error exception if new priority is outside allowed bounds.	 */
 	public void setPriority(KThread thread, int priority) {
 		Lib.assertTrue(Machine.interrupt().disabled());
 		
@@ -172,6 +167,7 @@ public class PriorityScheduler extends Scheduler {
 	}
 
 	/** Raise the priority of current thread by one */
+
 	public boolean increasePriority() {
 		boolean intStatus = Machine.interrupt().disable();
 
@@ -188,6 +184,7 @@ public class PriorityScheduler extends Scheduler {
 	}
 
 	/** Decrease the priority of current thread by one */
+
 	public boolean decreasePriority() {
 		boolean intStatus = Machine.interrupt().disable();
 
@@ -203,55 +200,63 @@ public class PriorityScheduler extends Scheduler {
 		return true;
 	}
 
-// THREADQUEUE IMPLEMENTED AS SEPERATE CLASS
 
-//	/**
-//	 * A <tt>ThreadQueue</tt> that sorts threads by priority.
-//	 */
-//	protected class PriorityQueue extends ThreadQueue {
-//		PriorityQueue(boolean transferPriority) {
-//			this.transferPriority = transferPriority;
-//		}
-//
-//		public void waitForAccess(KThread thread) {
-//			Lib.assertTrue(Machine.interrupt().disabled());
-//			getThreadState(thread).waitForAccess(this);
-//		}
-//
-//		public void acquire(KThread thread) {
-//			Lib.assertTrue(Machine.interrupt().disabled());
-//			getThreadState(thread).acquire(this);
-//		}
-//
-//		public KThread nextThread() {
-//			Lib.assertTrue(Machine.interrupt().disabled());
-//			// implement me
-//			return null;
-//		}
-//
-//		/**
-//		 * Return the next thread that <tt>nextThread()</tt> would return,
-//		 * without modifying the state of this queue.
-//		 *
-//		 * @return	the next thread that <tt>nextThread()</tt> would
-//		 *		return.
-//		 */
-//		protected ThreadState pickNextThread() {
-//			// implement me
-//			return null;
-//		}
-//
-//		public void print() {
-//			Lib.assertTrue(Machine.interrupt().disabled());
-//			// implement me (if you want)
-//		}
-//
-//		/**
-//		 * <tt>true</tt> if this queue should transfer priority from waiting
-//		 * threads to the owning thread.
-//		 */
-//		public boolean transferPriority;
-//	}
+
+	/**
+	 * A <tt>ThreadQueue</tt> that sorts threads by priority.
+	 */
+	protected abstract class PriorityThreadQueue extends ThreadQueue {
+		private ThreadComparator tComp = new ThreadComparator();
+		private PriorityQueue<KThread> waitQueue;
+		
+		private PriorityThreadQueue(boolean transferPriority) {
+		}
+		
+		/** Comparator used to order threads in priority queue based on priority. */
+		private class ThreadComparator implements Comparator<KThread> {
+
+			@Override
+			public int compare(KThread t1, KThread t2) {
+				int p1 = (ThreadedKernel.scheduler.getPriority(t1));
+				int p2 = (ThreadedKernel.scheduler.getPriority(t2));
+				int comp = p1-p2;
+				
+				if (comp < 0) return -1;
+				
+				if (comp > 0) return 1;
+				
+				return 0;
+				
+			}
+			
+		}
+
+		public abstract void waitForAccess(KThread thread);
+
+		public abstract void acquire(KThread thread);
+
+		public abstract KThread nextThread();
+
+		/**
+		 * Return the next thread that <tt>nextThread()</tt> would return,
+		 * without modifying the state of this queue.
+		 *
+		 * @return	the next thread that <tt>nextThread()</tt> would
+		 *		return.
+		 */
+		protected abstract ThreadState pickNextThread();
+
+		public void print() {
+			Lib.assertTrue(Machine.interrupt().disabled());
+			// implement me (if you want)
+		}
+
+		/**
+		 * <tt>true</tt> if this queue should transfer priority from waiting
+		 * threads to the owning thread.
+		 */
+		public boolean transferPriority;
+	}
 
 	/**
 	 * The scheduling state of a thread. This should include the thread's
