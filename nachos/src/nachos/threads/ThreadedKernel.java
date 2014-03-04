@@ -125,7 +125,7 @@ public class ThreadedKernel extends Kernel {
      * Terminate this kernel. Never returns.
      */
     public void terminate() {
-    	logWriter.flush();
+    	((StaticPriorityScheduler)scheduler).logFinalStats();
     	Machine.halt();
     }
     
