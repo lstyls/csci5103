@@ -121,6 +121,7 @@ public class MultiLevelScheduler extends PriorityScheduler {
 		@Override
 		public KThread nextThread() {
 			if (this.isEmpty()) return main;
+			this.ageWaiting();
 			return dequeue();
 		}
 		

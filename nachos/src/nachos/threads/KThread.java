@@ -429,13 +429,13 @@ public class KThread {
 			for (long i=0; i<1000000001; i++) {
 				long j = i%100000000;
 				if (j==0) {
-					System.out.println("*** thread " + which + " looped "
-							+ i/100000000 + " times");
+					//System.out.println("*** thread " + which + " looped "
+					//		+ i/100000000 + " times");
 					yield();
 				}
 				
 			}
-			System.out.println("*** thread " + which + " is done!");
+			//System.out.println("*** thread " + which + " is done!");
 		}
 
 		private int which;
@@ -446,11 +446,13 @@ public class KThread {
 	 */
 	public static void selfTest() {
 		Lib.debug(dbgThread, "Enter KThread.selfTest");
+		
+		st2();
 
-		Machine.interrupt().disable();
-		ThreadedKernel.scheduler.setPriority(7);
-		Machine.interrupt().enable();
-
+	}
+	
+	private static void st1() {
+		// Threads of equal priority executing in parallel
 		int num= Integer.parseInt(Config.getString("Kernel.numThreads"));
 		for(int i=0; i<num; i++){
 			boolean intState = Machine.interrupt().disable();
@@ -461,7 +463,27 @@ public class KThread {
 		}
 
 		yield();
+	}
+	
+	private static void st2() {
+		
+		boolean intState = Machine.interrupt().disable();
+		
+		KThread newguy1 = new KThread(new PingTest(1)).setName("forked thread");
+		ThreadedKernel.scheduler.setPriority(newguy1, 1);
+		newguy1.fork();
+		
+		KThread newguy2 = new KThread(new PingTest(2)).setName("forked thread");
+		ThreadedKernel.scheduler.setPriority(newguy2, 11);
+		newguy2.fork();
+		
+		KThread newguy3 = new KThread(new PingTest(1)).setName("forked thread");
+		ThreadedKernel.scheduler.setPriority(newguy3, 21);
+		newguy3.fork();
+		
+		Machine.interrupt().setStatus(intState);
 
+		yield();
 	}
 	
 	public boolean isIdleThread() {
