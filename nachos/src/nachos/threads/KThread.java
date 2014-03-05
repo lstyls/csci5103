@@ -430,8 +430,9 @@ public class KThread {
 				if (j==0) {
 					System.out.println("*** thread " + which + " looped "
 							+ i/100000000 + " times");
+					currentThread.yield();
 				}
-				//currentThread.yield();
+				
 			}
 			System.out.println("*** thread " + which + " is done!");
 		}
@@ -451,11 +452,19 @@ public class KThread {
 
 		int num= Integer.parseInt(Config.getString("Kernel.numThreads"));
 		for(int i=0; i<num; i++){
-			new KThread(new PingTest(i)).setName("forked thread").fork();
+			boolean intState = Machine.interrupt().disable();
+			KThread newguy = new KThread(new PingTest(i)).setName("forked thread");
+			ThreadedKernel.scheduler.setPriority(newguy, num+1-i);
+			Machine.interrupt().setStatus(intState);
+			newguy.fork();
 		}
 
 		yield();
 
+	}
+	
+	public boolean isIdleThread() {
+		return (this != KThread.idleThread) && (this != null);
 	}
 
 	private static final char dbgThread = 't';

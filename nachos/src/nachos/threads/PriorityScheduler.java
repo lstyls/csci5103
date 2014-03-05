@@ -249,10 +249,10 @@ public abstract class PriorityScheduler extends Scheduler {
 		 * Variables to track statistics for a thread.
 		 */
 		private long arrivalTime;
-		private long lastScheduled;
-		private long lastEnqueued;
-		private long thdTotWait;
-		private long thdTotRun;
+		protected long lastScheduled;
+		protected long lastEnqueued;
+		protected long thdTotWait;
+		protected long thdTotRun;
 		
 		protected KThread thread;
 		protected int priority;
