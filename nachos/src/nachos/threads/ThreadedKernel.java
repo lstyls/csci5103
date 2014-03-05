@@ -46,7 +46,7 @@ public class ThreadedKernel extends Kernel {
 		}
 
 		// assign reference in scheduler to the kernel
-		((StaticPriorityScheduler) scheduler).kernel = this;
+		((PriorityScheduler) scheduler).kernel = this;
 
 		// set fileSystem
 		String fileSystemName = Config.getString("ThreadedKernel.fileSystem");

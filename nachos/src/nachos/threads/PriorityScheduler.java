@@ -44,15 +44,15 @@ public abstract class PriorityScheduler extends Scheduler {
 	/**
 	 * The default priority for a new thread. Do not change this value.
 	 */
-	private final int priorityDefault = 1;
+	private final int priorityDefault = 11;
 	/**
 	 * The minimum priority that a thread can have. Do not change this value.
 	 */
-	private final int priorityMinimum = 0;
+	private final int priorityMinimum = 1;
 	/**
 	 * The maximum priority that a thread can have. Can be specified in config file.
 	 */
-	private int priorityMaximum = 7;    
+	protected int priorityMaximum = 40;    
 	
 	/** Reference to the kernel that instantiated the scheduler. */
 	protected ThreadedKernel kernel;
@@ -307,6 +307,12 @@ public abstract class PriorityScheduler extends Scheduler {
 			
 			kernel.logprint(String.format("%d,%s(%d),%d\n", curtime, thread.getName(),
 					thread.getID(), priority));
+		}
+		
+		public void ageValUp() {
+		}
+		
+		public void ageValDown() {
 		}
 		
 		

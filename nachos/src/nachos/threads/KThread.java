@@ -159,7 +159,7 @@ public class KThread {
 			}
 		});
 
-		ThreadedKernel.scheduler.initThreadState(this);
+		//ThreadedKernel.scheduler.initThreadState(this);
 		ready();
 
 		Machine.interrupt().restore(intStatus);
@@ -478,7 +478,7 @@ public class KThread {
 		if (this.isMainThread()) return;
 		Object test = this.thdSchedState.getClass();
 		Object y = test.getClass();
-		((MultiLevelScheduler.ThreadState) this.thdSchedState).updatePriority();
+		((MultiLevelScheduler.ThreadState) this.thdSchedState).ageValUp();
 	}
 
 	private static final char dbgThread = 't';
