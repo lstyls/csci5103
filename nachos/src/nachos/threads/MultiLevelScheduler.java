@@ -5,33 +5,31 @@ import java.util.LinkedList;
 import nachos.machine.Lib;
 import nachos.machine.Machine;
 
-//public class MultiLevelScheduler extends PriorityScheduler {
 public class MultiLevelScheduler extends StaticPriorityScheduler {
 	public MultiLevelScheduler() {
 		super();
 	}
 	
-	private StaticPriorityThreadQueue threadQueue;
+
 	
-	public StaticPriorityThreadQueue getThreadQueue() {
-		return threadQueue;
+	public ThreadState getThreadState(KThread thread) {
+		if (thread.thdSchedState == null) initThreadState(thread);
+		return (ThreadState) thread.thdSchedState;
 	}
 	
-
-	private long agingTime;
-
-	protected void setAgingTime(long agingTime) {
-		this.agingTime = agingTime;
-	}
 	
+	protected void initThreadState(KThread thread) {
+		thread.thdSchedState = new MultiLevelScheduler.ThreadState(thread);
+	}
+
+
 	@Override
 	public PriorityThreadQueue newThreadQueue(boolean transferPriority) {
-		// TODO Auto-generated method stub
-		return new StaticPriorityThreadQueue(transferPriority);
+		return new PriorityThreadQueue(transferPriority);
 	}
 	
 	
-	protected class ThreadState extends StaticPriorityScheduler.ThreadState {
+	protected class ThreadState extends PriorityScheduler.ThreadState {
 		
 		private long uncountedRunTime;
 		private long uncountedWaitTime;
@@ -44,29 +42,57 @@ public class MultiLevelScheduler extends StaticPriorityScheduler {
 		}
 		
 		
-		protected void updatePriority() {
+		public void updatePriority() {
 			if (this.thread.isIdleThread()) return;
 			long curtime = kernel.getTime();
-			curtime = 100;
-			long uncountedRunTime = 22;
 			long newRunTime = curtime + uncountedRunTime - this.lastScheduled;
 			int increment = (int) (newRunTime/( (long) agingTime));
 			this.uncountedRunTime = newRunTime % agingTime;
-			MultiLevelScheduler.this.setPriority(this.thread,this.priority+increment, true);
+			setFixPriority(thread, increment);
 		}
 		
 	}
 	
-/*	private class MultiLevelThreadQueue extends StaticPriorityScheduler.StaticPriorityThreadQueue {
+	
+	private class PriorityThreadQueue extends PriorityScheduler.PriorityThreadQueue {
 
-		public MultiLevelThreadQueue(
-				boolean transferPriority) {
+		LinkedList<KThread> lev1;
+		KThread main;
+		
+		public PriorityThreadQueue(boolean transferPriority) {
 			super(transferPriority);
-			// TODO Auto-generated constructor stub
+			
+			lev1 = new LinkedList<KThread>();
+		}
+
+		@Override
+		public void waitForAccess(KThread thread) {
+			Lib.assertTrue(Machine.interrupt().disabled(), "Interrupts not disabled in critical section.");
+			if (thread.isMainThread()) {
+				this.main = thread;
+			}
+			else {
+				lev1.add(thread);
+			}
+		}
+
+		@Override
+		public void acquire(KThread thread) {
+		    Lib.assertTrue(Machine.interrupt().disabled());
+		       
+		    Lib.assertTrue(lev1.isEmpty());
+		}
+
+		@Override
+		public KThread nextThread() {
+			if (this.isEmpty()) return main;
+			return lev1.removeFirst();
 		}
 		
-	}*/
-	
+		public boolean isEmpty() {
+			return lev1.isEmpty();
+		}
+	}
 	
 /*	private class MultiLevelThreadQueue extends PriorityScheduler.PriorityThreadQueue {
 

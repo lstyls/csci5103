@@ -159,34 +159,35 @@ public class KThread {
 			}
 		});
 
-		((StaticPriorityScheduler) ThreadedKernel.scheduler).getThreadState(this);
+		ThreadedKernel.scheduler.initThreadState(this);
 		ready();
 
 		Machine.interrupt().restore(intStatus);
 	}
 
 
-	/* Fork with prespecified priority */
-	public void fork(int priority) {
-		Lib.assertTrue(status == statusNew);
-		Lib.assertTrue(target != null);
-
-		Lib.debug(dbgThread,
-				"Forking thread: " + toString() + " Runnable: " + target);
-
-		boolean intStatus = Machine.interrupt().disable();
-
-		tcb.start(new Runnable() 	{ 
-			public void run() 	{ 
-				runThread();
-			}
-		});
-
-		((StaticPriorityScheduler) ThreadedKernel.scheduler).setPriority(priority);
-		ready();
-
-		Machine.interrupt().restore(intStatus);
-	}
+//	/* Fork with prespecified priority */
+//	public void fork(int priority) {
+//		Lib.assertTrue(status == statusNew);
+//		Lib.assertTrue(target != null);
+//
+//		Lib.debug(dbgThread,
+//				"Forking thread: " + toString() + " Runnable: " + target);
+//
+//		boolean intStatus = Machine.interrupt().disable();
+//
+//		tcb.start(new Runnable() 	{ 
+//			public void run() 	{ 
+//				runThread();
+//			}
+//		});
+//
+//		ThreadedKernel.scheduler.initThreadState(this);
+//		((StaticPriorityScheduler) ThreadedKernel.scheduler).setPriority(priority);
+//		ready();
+//
+//		Machine.interrupt().restore(intStatus);
+//	}
 
 	private void runThread() {
 		begin();
@@ -254,7 +255,7 @@ public class KThread {
 		boolean intStatus = Machine.interrupt().disable();
 
 		currentThread.ready();
-
+		currentThread.updatePriority();
 		runNextThread();
 
 		Machine.interrupt().restore(intStatus);
@@ -295,7 +296,7 @@ public class KThread {
 		status = statusReady;
 		if (this != idleThread) {
 			readyQueue.waitForAccess(this);
-			((StaticPriorityScheduler.ThreadState) this.thdSchedState).logEnqueued();
+			this.thdSchedState.logEnqueued();
 		}
 
 
@@ -430,7 +431,7 @@ public class KThread {
 				if (j==0) {
 					System.out.println("*** thread " + which + " looped "
 							+ i/100000000 + " times");
-					currentThread.yield();
+					yield();
 				}
 				
 			}
@@ -464,7 +465,20 @@ public class KThread {
 	}
 	
 	public boolean isIdleThread() {
-		return (this != KThread.idleThread) && (this != null);
+		return (this == KThread.idleThread) && (this != null);
+	}
+	
+	public boolean isMainThread() {
+		return (this.id == 0);
+	}
+	
+
+	private void updatePriority() {
+		if (this.isIdleThread()) return;
+		if (this.isMainThread()) return;
+		Object test = this.thdSchedState.getClass();
+		Object y = test.getClass();
+		((MultiLevelScheduler.ThreadState) this.thdSchedState).updatePriority();
 	}
 
 	private static final char dbgThread = 't';
