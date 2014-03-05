@@ -216,12 +216,14 @@ public abstract class PriorityScheduler extends Scheduler {
 			}
 			
 		}
+		public abstract void updatePriority();
 
 		public abstract void waitForAccess(KThread thread);
 
 		public abstract void acquire(KThread thread);
 
 		public abstract KThread nextThread();
+		
 
 		public void print() {
 			Lib.assertTrue(Machine.interrupt().disabled());
@@ -253,6 +255,10 @@ public abstract class PriorityScheduler extends Scheduler {
 		private long lastEnqueued;
 		private long thdTotWait;
 		private long thdTotRun;
+		
+		/*for computing effective priority*/
+		private long effTotWait;
+		private long effTotRun;
 		
 		protected KThread thread;
 		protected int priority;
@@ -340,6 +346,23 @@ public abstract class PriorityScheduler extends Scheduler {
 			 * of allowed bounds because this is checked in the 
 			 * enclosing method. */
 			this.priority = priority;
+		}
+		
+		/* updates the effective priority of the thread */
+		public void updateDynamicPriority(){
+			//System.out.println(effTotWait);
+			effTotWait += thdTotWait;
+			effTotRun += thdTotRun;
+			if ((long)DynamicPriorityScheduler.agingTime != 0){
+				while(effTotWait > (long)DynamicPriorityScheduler.agingTime){
+					effTotWait -= (long)DynamicPriorityScheduler.agingTime;
+					decreasePriority();
+				}
+				while(effTotRun > (long)DynamicPriorityScheduler.agingTime){
+					effTotRun -= (long)DynamicPriorityScheduler.agingTime;
+					increasePriority();
+				}
+			}
 		}
 		
 	}

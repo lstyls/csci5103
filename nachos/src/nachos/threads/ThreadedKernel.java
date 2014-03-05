@@ -32,9 +32,12 @@ public class ThreadedKernel extends Kernel {
 	 */
 	public void initialize(String[] args) {
 		// set scheduler
-		String schedulerName = Config.getString("ThreadedKernel.scheduler");
+		schedulerName = Config.getString("ThreadedKernel.scheduler");
 		if (schedulerName.equals("nachos.threads.StaticPriorityScheduler")) {
 			scheduler = (nachos.threads.StaticPriorityScheduler) Lib.constructObject(schedulerName);
+		}else if (schedulerName.equals("nachos.threads.DynamicPriorityScheduler")){
+			scheduler = (nachos.threads.DynamicPriorityScheduler) Lib.constructObject(schedulerName);
+			((DynamicPriorityScheduler) scheduler).setAgingTime(Config.getDouble("scheduler.agingTime"));
 		}
 		else {
 			System.err.println("No priority scheduler specified. Will exit.");
@@ -42,7 +45,7 @@ public class ThreadedKernel extends Kernel {
 		}
 
 		// assign reference in scheduler to the kernel
-		((StaticPriorityScheduler) scheduler).kernel = this;
+		 scheduler.kernel = this;
 
 		// set fileSystem
 		String fileSystemName = Config.getString("ThreadedKernel.fileSystem");
@@ -125,7 +128,7 @@ public class ThreadedKernel extends Kernel {
 	 * Terminate this kernel. Never returns.
 	 */
 	public void terminate() {
-		((StaticPriorityScheduler)scheduler).logFinalStats();
+		scheduler.logFinalStats();
 		Machine.halt();
 	}
 
@@ -143,6 +146,8 @@ public class ThreadedKernel extends Kernel {
 	public static Alarm alarm = null;
 	/** Globally accessible reference to the file system. */
 	public static FileSystem fileSystem = null;
-
+	
+	
 	public static int numThreads;
+	public static String schedulerName;
 }

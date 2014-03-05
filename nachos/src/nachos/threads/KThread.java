@@ -53,8 +53,7 @@ public class KThread {
 
 			/* test comment */
 
-			((StaticPriorityScheduler.ThreadState) this.thdSchedState).logScheduled();
-
+			((PriorityScheduler.ThreadState) this.thdSchedState).logScheduled();
 			currentThread = this;
 			tcb = TCB.currentTCB();
 			name = "main";
@@ -159,7 +158,7 @@ public class KThread {
 			}
 		});
 
-		((StaticPriorityScheduler) ThreadedKernel.scheduler).getThreadState(this);
+		ThreadedKernel.scheduler.getThreadState(this);
 		ready();
 
 		Machine.interrupt().restore(intStatus);
@@ -182,7 +181,8 @@ public class KThread {
 			}
 		});
 
-		((StaticPriorityScheduler) ThreadedKernel.scheduler).setPriority(priority);
+		ThreadedKernel.scheduler.getThreadState(this);
+		ThreadedKernel.scheduler.setPriority(priority);
 		ready();
 
 		Machine.interrupt().restore(intStatus);
@@ -223,8 +223,8 @@ public class KThread {
 
 		Lib.assertTrue(toBeDestroyed == null);
 		toBeDestroyed = currentThread;
-		((StaticPriorityScheduler.ThreadState) toBeDestroyed.thdSchedState).logFinished();
-
+		((PriorityScheduler.ThreadState) toBeDestroyed.thdSchedState).logFinished();
+		//readyQueue.updatePriority();
 		currentThread.status = statusFinished;
 
 		sleep();
@@ -252,7 +252,7 @@ public class KThread {
 		Lib.assertTrue(currentThread.status == statusRunning);
 
 		boolean intStatus = Machine.interrupt().disable();
-
+		
 		currentThread.ready();
 
 		runNextThread();
@@ -295,7 +295,11 @@ public class KThread {
 		status = statusReady;
 		if (this != idleThread) {
 			readyQueue.waitForAccess(this);
-			((StaticPriorityScheduler.ThreadState) this.thdSchedState).logEnqueued();
+			((PriorityScheduler.ThreadState) this.thdSchedState).logEnqueued();
+			if(ThreadedKernel.schedulerName.equals("nachos.threads.DynamicPriorityScheduler")){
+				readyQueue.updatePriority();
+			}
+			
 		}
 
 
@@ -348,6 +352,7 @@ public class KThread {
 			nextThread = idleThread;
 
 		nextThread.run();
+		
 	}
 
 	/**
@@ -379,10 +384,10 @@ public class KThread {
 
 		Lib.debug(dbgThread, "Switching from: " + currentThread.toString()
 				+ " to: " + toString());
-
+		
 		currentThread = this;
 		this.thdSchedState.logScheduled();
-
+		//readyQueue.updatePriority();
 		tcb.contextSwitch();
 
 		currentThread.restoreState();
@@ -430,8 +435,8 @@ public class KThread {
 				if (j==0) {
 					System.out.println("*** thread " + which + " looped "
 							+ i/100000000 + " times");
+					currentThread.yield();
 				}
-				//currentThread.yield();
 			}
 			System.out.println("*** thread " + which + " is done!");
 		}
@@ -449,9 +454,15 @@ public class KThread {
 		ThreadedKernel.scheduler.setPriority(7);
 		Machine.interrupt().enable();
 
-		int num= Integer.parseInt(Config.getString("Kernel.numThreads"));
-		for(int i=0; i<num; i++){
-			new KThread(new PingTest(i)).setName("forked thread").fork();
+		int num = Integer.parseInt(Config.getString("Kernel.numThreads"));
+		if (num == 3){
+			new KThread(new PingTest(0)).setName("forked thread").fork(1);
+			new KThread(new PingTest(1)).setName("forked thread").fork(3);
+			new KThread(new PingTest(2)).setName("forked thread").fork(6);
+		}else{
+			for(int i=0; i<num; i++){
+				new KThread(new PingTest(i)).setName("forked thread").fork();
+			}
 		}
 
 		yield();
