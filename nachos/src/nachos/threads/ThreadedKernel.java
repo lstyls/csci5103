@@ -10,18 +10,15 @@ import nachos.machine.*;
  * A multi-threaded OS kernel.
  */
 public class ThreadedKernel extends Kernel {
+
+
+
+	/** I/0 file writer to handle logging specification in Part D. */
+	private PrintWriter logWriter;
+
 	/**
 	 * Allocate a new multi-threaded kernel.
 	 */
-
-
-	/**
-	 * Class variables added for assignment 1.
-	 */
-
-	private PrintWriter logWriter;
-
-
 	public ThreadedKernel() {
 		super();
 	}
@@ -31,7 +28,7 @@ public class ThreadedKernel extends Kernel {
 	 * alarm, and enables interrupts. Creates a file system if necessary.   
 	 */
 	public void initialize(String[] args) {
-		// set scheduler
+		// Set scheduler to one of the three assignment types as specified in the config file.
 		String schedulerName = Config.getString("ThreadedKernel.scheduler");
 		if (schedulerName.equals("nachos.threads.StaticPriorityScheduler")) {
 			scheduler = (nachos.threads.StaticPriorityScheduler) Lib.constructObject(schedulerName);
@@ -53,6 +50,7 @@ public class ThreadedKernel extends Kernel {
 
 		// assign reference in scheduler to the kernel
 		 scheduler.kernel = this;
+		 ThreadedKernel.selfTestNum = Config.getInteger("ThreadedKernel.whichTest");
 
 		// set fileSystem
 		String fileSystemName = Config.getString("ThreadedKernel.fileSystem");
@@ -72,7 +70,7 @@ public class ThreadedKernel extends Kernel {
 		int maxPriority = Config.getInteger("scheduler.maxPriorityValue");
 		scheduler.setSchedMaxPriority(maxPriority);
 		
-		/** Grab the time */
+		/* Grab the initialization time */
 		inittime = System.currentTimeMillis();
 
 		/* Initialize logfile */
@@ -82,6 +80,7 @@ public class ThreadedKernel extends Kernel {
 			logWriter = new PrintWriter(System.out);
 		}
 
+		// Initialize logger.
 		else {
 			try{
 				logWriter = new PrintWriter(new FileWriter(logFileName));
@@ -105,18 +104,12 @@ public class ThreadedKernel extends Kernel {
 	}
 
 	/**
-	 * Test this kernel. Test the <tt>KThread</tt>, <tt>Semaphore</tt>,
-	 * <tt>SynchList</tt>, and <tt>ElevatorBank</tt> classes. Note that the
+	 * Test this kernel. Test the <tt>KThread</tt>, class. Note that the
 	 * autograder never calls this method, so it is safe to put additional
 	 * tests here.
 	 */	
 	public void selfTest() {
 		KThread.selfTest();
-		//	Semaphore.selfTest();
-		//	SynchList.selfTest();
-		//	if (Machine.bank() != null) {
-		//	    ElevatorBank.selfTest();
-		//	}
 	}
 
 	/**
@@ -127,12 +120,14 @@ public class ThreadedKernel extends Kernel {
 	}
 
 
+	/** Print newline to log file */
 	protected void logprintln(String str) {
 		logWriter.println(str);
 		logWriter.flush();
 	}
 
 
+	/** Print line to log file */
 	protected void logprint(String str) {
 		logWriter.print(str);
 		logWriter.flush();
@@ -151,6 +146,9 @@ public class ThreadedKernel extends Kernel {
 		long curtime = System.currentTimeMillis();
 		return curtime-inittime;
 	}
+	
+	/** Indicates which self test is to be run as specified in config file. */
+	public static int selfTestNum;
 
 	/** Time of Initialization of the Kernel */
 	private long inittime = 0;

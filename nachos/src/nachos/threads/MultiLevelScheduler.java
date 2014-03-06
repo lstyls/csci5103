@@ -72,8 +72,13 @@ public class MultiLevelScheduler extends PriorityScheduler {
 	
 	private class PriorityThreadQueue extends PriorityScheduler.PriorityThreadQueue {
 
+		/** FIFO queue for tier 1 (priority 1 through 10) */
 		LinkedList<KThread> lev1;
+		
+		/** FIFO queue for tier 2 (priority 11 through 20). */
 		LinkedList<KThread> lev2;
+		
+		/** FIFO queue for tier 3 (priority 21 and above). */
 		LinkedList<KThread> lev3;
 		
 		KThread main;
@@ -89,6 +94,7 @@ public class MultiLevelScheduler extends PriorityScheduler {
 		@Override
 		public void waitForAccess(KThread thread) {
 			Lib.assertTrue(Machine.interrupt().disabled(), "Interrupts not disabled in critical section.");
+			
 			if (thread.isMainThread()) {
 				this.main = thread;
 			}

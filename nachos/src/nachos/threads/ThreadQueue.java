@@ -63,15 +63,16 @@ public abstract class ThreadQueue {
 
     /**
      * Notify this thread queue that another thread can receive access. Choose
-     * and return the next thread to receive access, or <tt>null</tt> if there
-     * are no threads waiting.
+     * and return the next thread to receive access. If all test threads are 
+     * done, return <tt>main</tt> so that the kernel will terminate. If this does
+     * not happen, the idle thread will keep the kernel running forever.
      *
      * <p>
      * If the limited access object transfers priority, and if there are other
      * threads waiting for access, then they will donate priority to the
      * returned thread.
      *
-     * @return	the next thread to receive access, or <tt>null</tt> if there
+     * @return	the next thread to receive access, or <tt>main</tt> if there
      *		are no threads waiting.
      */
     public abstract KThread nextThread();

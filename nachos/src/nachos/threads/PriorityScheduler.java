@@ -7,22 +7,8 @@ import java.util.Comparator;
 /**
  * A scheduler that chooses threads based on their priorities.
  *
- * <p>
- * A priority scheduler associates a priority with each thread. The next thread
- * to be dequeued is always a thread with priority no less than any other
- * waiting thread's priority. Like a round-robin scheduler, the thread that is
- * dequeued is, among all the threads of the same (highest) priority, the
- * thread that has been waiting longest.
- *
- * <p>
- * Essentially, a priority scheduler gives access in a round-robin fassion to
- * all the highest-priority threads, and ignores all other threads. This has
- * the potential to
- * starve a thread if there's always a thread waiting with higher priority.
- *
- * <p>
- * A priority scheduler must partially solve the priority inversion problem; in
- * particular, priority must be donated through locks, and through joins.
+ * This is an abstract class from which the schedulers described in the problem
+ * description are extended.
  */
 public abstract class PriorityScheduler extends Scheduler {
 
@@ -58,7 +44,7 @@ public abstract class PriorityScheduler extends Scheduler {
 	protected ThreadedKernel kernel;
 	
 	/**
-	 * Allocate a new priority scheduler.
+	 * Allocate, initialize a new priority scheduler.
 	 */
 	public PriorityScheduler() {
 		nfinished = 0;
@@ -68,6 +54,8 @@ public abstract class PriorityScheduler extends Scheduler {
 	}
 		
 
+	/** Interval of running/waiting time for which priority will be incremented/decremented
+	 * respectively.	 */
 	protected long agingTime;
 	
 	protected void setAgingTime(long ageTime) {
@@ -113,6 +101,7 @@ public abstract class PriorityScheduler extends Scheduler {
 		return (ThreadState) thread.thdSchedState;
 	}
 	
+	/** Allocate and assign a thread state object for specified thread. */
 	protected void initThreadState(KThread thread) {
 		thread.thdSchedState = new ThreadState(thread);
 	}
@@ -147,7 +136,7 @@ public abstract class PriorityScheduler extends Scheduler {
 	}
 	
 	
-	
+	/** Set globally allowed maximum priority as specified in the config file. */
 	protected void setSchedMaxPriority(int maxp) {
 		this.priorityMaximum = maxp;
 	}
@@ -199,7 +188,6 @@ public abstract class PriorityScheduler extends Scheduler {
 	}
 
 	/** Decrease the priority of current thread by one */
-
 	public boolean decreasePriority() {
 		boolean intStatus = Machine.interrupt().disable();
 
@@ -244,12 +232,14 @@ public abstract class PriorityScheduler extends Scheduler {
 			
 		}
 		
-		//public abstract void updatePriority();
-
+		/** Add specified thread to waiting queue. */
 		public abstract void waitForAccess(KThread thread);
 
+		/** Acquire CPU. */
 		public abstract void acquire(KThread thread);
 
+		/** Return next scheduled thread. Return the main thread if there are no test threads remaining so 
+		 * that the kernel exits. */
 		public abstract KThread nextThread();
 		
 
@@ -308,13 +298,14 @@ public abstract class PriorityScheduler extends Scheduler {
 			
 			if (lastEnqueued > 0) thdTotWait += curtime - lastEnqueued;
 			
-			kernel.logprint(String.format("%d,%s(%d),%d\n", curtime, thread.getName(),
-					thread.getID(), priority));
+			kernel.logprint(String.format("%d,%d,%d\n", curtime, thread.getID(), priority));
 		}
 		
+		/** Age the thread associated with this state upward by some scheduler-dependent method. Default behavior does nothing. */
 		public void ageValUp() {
 		}
 		
+		/** Age the thread associated with this state downward by some scheduler-dependent method. Default behavior does nothing. */
 		public void ageValDown() {
 		}
 		
@@ -350,16 +341,18 @@ public abstract class PriorityScheduler extends Scheduler {
 			if (thdTotWait>0) totalWaitTime += thdTotWait;
 			if (thdTotWait>maxWaitTime)  maxWaitTime = thdTotWait;
 			
-			kernel.logprint(String.format("%s(%d),%d,%d,%d,%d\n", thread.getName(), thread.getID(),
+			kernel.logprint(String.format("%d,%d,%d,%d,%d\n", thread.getID(),
 					arrivalTime, thdTotRun+curtime-lastScheduled, thdTotWait, curtime));
 			
 		}
 
-		
+		/** Return priority of associated thread. */
 		public int getPriority() {
 			return this.priority;
 		}
-		
+		/** Return effective priority of thread based on priority donation. Our implementation does nothing
+		 * as the assignment ignores this feature.
+		 */
 		public int getEffectivePriority() {
 			// We aren't worrying about donating priority, so this is the same as vanilla priority.
 			return this.getPriority();
@@ -377,23 +370,6 @@ public abstract class PriorityScheduler extends Scheduler {
 			 * enclosing method. */
 			this.priority = priority;
 		}
-		
-		/* updates the effective priority of the thread */
-//		public void updateDynamicPriority(){
-//			//System.out.println(effTotWait);
-//			effTotWait += thdTotWait;
-//			effTotRun += thdTotRun;
-//			if ((long)DynamicPriorityScheduler.agingTime != 0){
-//				while(effTotWait > (long)DynamicPriorityScheduler.agingTime){
-//					effTotWait -= (long)DynamicPriorityScheduler.agingTime;
-//					decreasePriority();
-//				}
-//				while(effTotRun > (long)DynamicPriorityScheduler.agingTime){
-//					effTotRun -= (long)DynamicPriorityScheduler.agingTime;
-//					increasePriority();
-//				}
-//			}
-//		}
 		
 	}
 }
