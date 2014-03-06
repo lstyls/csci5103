@@ -64,6 +64,10 @@ public class StaticPriorityScheduler extends PriorityScheduler {
 			
 			return waitQueue.poll();
 		}
+		
+		public void updatePriority(){
+			
+		}
 
 		
 	}

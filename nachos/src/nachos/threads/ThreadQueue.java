@@ -95,4 +95,11 @@ public abstract class ThreadQueue {
      * Print out all the threads waiting for access, in no particular order.
      */
     public abstract void print();
+    
+//    /** This uses total wait time and total run time to change the priority
+//     * of each thread. It uses agingTime variable as a threshhold.  For every factor
+//     * of the aging time in the total wait time the priority is decreased so it will have
+//     * a higher priority.  For every factor of agingTime found in the total run time the
+//     * priority is increased to give it lower priority */
+//    public abstract void updatePriority();
 }
