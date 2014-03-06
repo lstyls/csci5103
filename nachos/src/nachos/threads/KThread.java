@@ -53,8 +53,7 @@ public class KThread {
 
 			/* test comment */
 
-			((StaticPriorityScheduler.ThreadState) this.thdSchedState).logScheduled();
-
+			((PriorityScheduler.ThreadState) this.thdSchedState).logScheduled();
 			currentThread = this;
 			tcb = TCB.currentTCB();
 			name = "main";
@@ -297,6 +296,12 @@ public class KThread {
 		if (this != idleThread) {
 			readyQueue.waitForAccess(this);
 			this.thdSchedState.logEnqueued();
+			
+			/*
+			if(ThreadedKernel.schedulerName.equals("nachos.threads.DynamicPriorityScheduler")){
+				readyQueue.updatePriority();
+			}
+			*/
 		}
 
 
