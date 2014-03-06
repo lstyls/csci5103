@@ -158,35 +158,35 @@ public class KThread {
 			}
 		});
 
-		ThreadedKernel.scheduler.getThreadState(this);
+		//ThreadedKernel.scheduler.initThreadState(this);
 		ready();
 
 		Machine.interrupt().restore(intStatus);
 	}
 
 
-	/* Fork with prespecified priority */
-	public void fork(int priority) {
-		Lib.assertTrue(status == statusNew);
-		Lib.assertTrue(target != null);
-
-		Lib.debug(dbgThread,
-				"Forking thread: " + toString() + " Runnable: " + target);
-
-		boolean intStatus = Machine.interrupt().disable();
-
-		tcb.start(new Runnable() 	{ 
-			public void run() 	{ 
-				runThread();
-			}
-		});
-
-		ThreadedKernel.scheduler.getThreadState(this);
-		ThreadedKernel.scheduler.setPriority(priority);
-		ready();
-
-		Machine.interrupt().restore(intStatus);
-	}
+//	/* Fork with prespecified priority */
+//	public void fork(int priority) {
+//		Lib.assertTrue(status == statusNew);
+//		Lib.assertTrue(target != null);
+//
+//		Lib.debug(dbgThread,
+//				"Forking thread: " + toString() + " Runnable: " + target);
+//
+//		boolean intStatus = Machine.interrupt().disable();
+//
+//		tcb.start(new Runnable() 	{ 
+//			public void run() 	{ 
+//				runThread();
+//			}
+//		});
+//
+//		ThreadedKernel.scheduler.initThreadState(this);
+//		((StaticPriorityScheduler) ThreadedKernel.scheduler).setPriority(priority);
+//		ready();
+//
+//		Machine.interrupt().restore(intStatus);
+//	}
 
 	private void runThread() {
 		begin();
@@ -223,8 +223,8 @@ public class KThread {
 
 		Lib.assertTrue(toBeDestroyed == null);
 		toBeDestroyed = currentThread;
-		((PriorityScheduler.ThreadState) toBeDestroyed.thdSchedState).logFinished();
-		//readyQueue.updatePriority();
+		((StaticPriorityScheduler.ThreadState) toBeDestroyed.thdSchedState).logFinished();
+
 		currentThread.status = statusFinished;
 
 		sleep();
@@ -252,9 +252,9 @@ public class KThread {
 		Lib.assertTrue(currentThread.status == statusRunning);
 
 		boolean intStatus = Machine.interrupt().disable();
-		
-		currentThread.ready();
 
+		currentThread.ready();
+		currentThread.updatePriority();
 		runNextThread();
 
 		Machine.interrupt().restore(intStatus);
@@ -295,11 +295,13 @@ public class KThread {
 		status = statusReady;
 		if (this != idleThread) {
 			readyQueue.waitForAccess(this);
-			((PriorityScheduler.ThreadState) this.thdSchedState).logEnqueued();
+			this.thdSchedState.logEnqueued();
+			
+			/*
 			if(ThreadedKernel.schedulerName.equals("nachos.threads.DynamicPriorityScheduler")){
 				readyQueue.updatePriority();
 			}
-			
+			*/
 		}
 
 
@@ -352,7 +354,6 @@ public class KThread {
 			nextThread = idleThread;
 
 		nextThread.run();
-		
 	}
 
 	/**
@@ -384,10 +385,10 @@ public class KThread {
 
 		Lib.debug(dbgThread, "Switching from: " + currentThread.toString()
 				+ " to: " + toString());
-		
+
 		currentThread = this;
 		this.thdSchedState.logScheduled();
-		//readyQueue.updatePriority();
+
 		tcb.contextSwitch();
 
 		currentThread.restoreState();
@@ -433,12 +434,13 @@ public class KThread {
 			for (long i=0; i<1000000001; i++) {
 				long j = i%100000000;
 				if (j==0) {
-					System.out.println("*** thread " + which + " looped "
-							+ i/100000000 + " times");
-					currentThread.yield();
+					//System.out.println("*** thread " + which + " looped "
+					//		+ i/100000000 + " times");
+					//yield();
 				}
+				
 			}
-			System.out.println("*** thread " + which + " is done!");
+			//System.out.println("*** thread " + which + " is done!");
 		}
 
 		private int which;
@@ -449,24 +451,61 @@ public class KThread {
 	 */
 	public static void selfTest() {
 		Lib.debug(dbgThread, "Enter KThread.selfTest");
+		
+		st1();
 
-		Machine.interrupt().disable();
-		ThreadedKernel.scheduler.setPriority(7);
-		Machine.interrupt().enable();
-
-		int num = Integer.parseInt(Config.getString("Kernel.numThreads"));
-		if (num == 3){
-			new KThread(new PingTest(0)).setName("forked thread").fork(1);
-			new KThread(new PingTest(1)).setName("forked thread").fork(3);
-			new KThread(new PingTest(2)).setName("forked thread").fork(6);
-		}else{
-			for(int i=0; i<num; i++){
-				new KThread(new PingTest(i)).setName("forked thread").fork();
-			}
+	}
+	
+	private static void st1() {
+		// Threads of equal priority executing in parallel
+		int num= Integer.parseInt(Config.getString("Kernel.numThreads"));
+		for(int i=0; i<num; i++){
+			boolean intState = Machine.interrupt().disable();
+			KThread newguy = new KThread(new PingTest(i)).setName("forked thread");
+			ThreadedKernel.scheduler.setPriority(newguy, 40);
+			Machine.interrupt().setStatus(intState);
+			newguy.fork();
 		}
 
 		yield();
+	}
+	
+	private static void st2() {
+		
+		boolean intState = Machine.interrupt().disable();
+		
+		KThread newguy1 = new KThread(new PingTest(1)).setName("forked thread");
+		ThreadedKernel.scheduler.setPriority(newguy1, 1);
+		newguy1.fork();
+		
+		KThread newguy2 = new KThread(new PingTest(2)).setName("forked thread");
+		ThreadedKernel.scheduler.setPriority(newguy2, 5);
+		newguy2.fork();
+		
+		KThread newguy3 = new KThread(new PingTest(1)).setName("forked thread");
+		ThreadedKernel.scheduler.setPriority(newguy3, 10);
+		newguy3.fork();
+		
+		Machine.interrupt().setStatus(intState);
 
+		yield();
+	}
+	
+	public boolean isIdleThread() {
+		return (this == KThread.idleThread) && (this != null);
+	}
+	
+	public boolean isMainThread() {
+		return (this.id == 0);
+	}
+	
+
+	private void updatePriority() {
+		if (this.isIdleThread()) return;
+		if (this.isMainThread()) return;
+//		Object test = this.thdSchedState.getClass();
+//		Object y = test.getClass();
+		this.thdSchedState.ageValUp();
 	}
 
 	private static final char dbgThread = 't';

@@ -44,15 +44,15 @@ public abstract class PriorityScheduler extends Scheduler {
 	/**
 	 * The default priority for a new thread. Do not change this value.
 	 */
-	public static final int priorityDefault = 1;
+	private final int priorityDefault = 11;
 	/**
 	 * The minimum priority that a thread can have. Do not change this value.
 	 */
-	public static final int priorityMinimum = 0;
+	protected final int priorityMinimum = 1;
 	/**
 	 * The maximum priority that a thread can have. Can be specified in config file.
 	 */
-	public static int priorityMaximum = 7;    
+	protected int priorityMaximum = 40;    
 	
 	/** Reference to the kernel that instantiated the scheduler. */
 	protected ThreadedKernel kernel;
@@ -67,6 +67,13 @@ public abstract class PriorityScheduler extends Scheduler {
 		maxWaitTime = 0;
 	}
 		
+
+	protected long agingTime;
+	
+	protected void setAgingTime(long ageTime) {
+		agingTime = ageTime;
+	}
+	
 	/** Write global stats to kernel logfile for threads managed by the scheduler.
 	 * To be called before kernel terminates.
 	 */
@@ -77,7 +84,7 @@ public abstract class PriorityScheduler extends Scheduler {
 				maxWaitTime, avTurn));
 	}
 	
-
+	
 	/**
 	 * Allocate a new priority thread queue.
 	 *
@@ -101,11 +108,14 @@ public abstract class PriorityScheduler extends Scheduler {
 	 */
 	protected ThreadState getThreadState(KThread thread) {
 		if (thread.thdSchedState == null)
-			thread.thdSchedState = new ThreadState(thread);
+			initThreadState(thread);
 
 		return (ThreadState) thread.thdSchedState;
 	}
 	
+	protected void initThreadState(KThread thread) {
+		thread.thdSchedState = new ThreadState(thread);
+	}
 	
 	/**
 	 * Get priority of specified thread.
@@ -139,7 +149,7 @@ public abstract class PriorityScheduler extends Scheduler {
 	
 	
 	protected void setSchedMaxPriority(int maxp) {
-		PriorityScheduler.priorityMaximum = maxp;
+		this.priorityMaximum = maxp;
 	}
 	
 	
@@ -151,7 +161,24 @@ public abstract class PriorityScheduler extends Scheduler {
 		Lib.assertTrue(priority >= priorityMinimum && 
 				priority <= priorityMaximum);
 		
-		getThreadState(thread).setPriority(priority);
+		this.getThreadState(thread).setPriority(priority);
+	}
+	
+	/** Sets the priority of the specified thread. Fixes given priority so that
+	 * it falls within allowed bounds.
+	 *  
+	 * @param thread
+	 * @param priority
+	 */
+	public void setFixPriority(KThread thread, int priority) {
+		Lib.assertTrue(Machine.interrupt().disabled());
+		
+		if (priority < this.priorityMinimum)
+			priority = this.priorityMinimum;
+		if (priority > this.priorityMaximum)
+			priority = this.priorityMaximum;
+		
+		setPriority(thread, priority);
 	}
 
 	/** Raise the priority of current thread by one */
@@ -216,7 +243,8 @@ public abstract class PriorityScheduler extends Scheduler {
 			}
 			
 		}
-		public abstract void updatePriority();
+		
+		//public abstract void updatePriority();
 
 		public abstract void waitForAccess(KThread thread);
 
@@ -251,14 +279,10 @@ public abstract class PriorityScheduler extends Scheduler {
 		 * Variables to track statistics for a thread.
 		 */
 		private long arrivalTime;
-		private long lastScheduled;
-		private long lastEnqueued;
-		private long thdTotWait;
-		private long thdTotRun;
-		
-		/*for computing effective priority*/
-		private long effTotWait;
-		private long effTotRun;
+		protected long lastScheduled;
+		protected long lastEnqueued;
+		protected long thdTotWait;
+		protected long thdTotRun;
 		
 		protected KThread thread;
 		protected int priority;
@@ -286,6 +310,12 @@ public abstract class PriorityScheduler extends Scheduler {
 			
 			kernel.logprint(String.format("%d,%s(%d),%d\n", curtime, thread.getName(),
 					thread.getID(), priority));
+		}
+		
+		public void ageValUp() {
+		}
+		
+		public void ageValDown() {
 		}
 		
 		
@@ -349,21 +379,21 @@ public abstract class PriorityScheduler extends Scheduler {
 		}
 		
 		/* updates the effective priority of the thread */
-		public void updateDynamicPriority(){
-			//System.out.println(effTotWait);
-			effTotWait += thdTotWait;
-			effTotRun += thdTotRun;
-			if ((long)DynamicPriorityScheduler.agingTime != 0){
-				while(effTotWait > (long)DynamicPriorityScheduler.agingTime){
-					effTotWait -= (long)DynamicPriorityScheduler.agingTime;
-					decreasePriority();
-				}
-				while(effTotRun > (long)DynamicPriorityScheduler.agingTime){
-					effTotRun -= (long)DynamicPriorityScheduler.agingTime;
-					increasePriority();
-				}
-			}
-		}
+//		public void updateDynamicPriority(){
+//			//System.out.println(effTotWait);
+//			effTotWait += thdTotWait;
+//			effTotRun += thdTotRun;
+//			if ((long)DynamicPriorityScheduler.agingTime != 0){
+//				while(effTotWait > (long)DynamicPriorityScheduler.agingTime){
+//					effTotWait -= (long)DynamicPriorityScheduler.agingTime;
+//					decreasePriority();
+//				}
+//				while(effTotRun > (long)DynamicPriorityScheduler.agingTime){
+//					effTotRun -= (long)DynamicPriorityScheduler.agingTime;
+//					increasePriority();
+//				}
+//			}
+//		}
 		
 	}
 }
