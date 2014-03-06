@@ -36,9 +36,15 @@ public class ThreadedKernel extends Kernel {
 		if (schedulerName.equals("nachos.threads.StaticPriorityScheduler")) {
 			scheduler = (nachos.threads.StaticPriorityScheduler) Lib.constructObject(schedulerName);
 		}
+		else if (schedulerName.equals("nachos.threads.DynamicPriorityScheduler")) {
+			scheduler = new DynamicPriorityScheduler();
+			int ageTime = Config.getInteger("scheduler.agingTime");
+			scheduler.setAgingTime(ageTime);
+		}
 		else if (schedulerName.equals("nachos.threads.MultiLevelScheduler")) {
 			scheduler = new MultiLevelScheduler();
-			//scheduler.setAgingTime(ageTime);
+			int ageTime = Config.getInteger("scheduler.agingTime");
+			scheduler.setAgingTime(ageTime);
 		}
 		else {
 			System.err.println("No priority scheduler specified. Will exit.");
@@ -58,6 +64,8 @@ public class ThreadedKernel extends Kernel {
 			fileSystem = null;
 
 		ThreadedKernel.numThreads = Config.getInteger("Kernel.numThreads");
+		
+		
 		int ageTime = Config.getInteger("scheduler.agingTime");
 		scheduler.setAgingTime(ageTime);
 		

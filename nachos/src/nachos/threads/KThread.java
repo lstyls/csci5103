@@ -436,7 +436,7 @@ public class KThread {
 				if (j==0) {
 					//System.out.println("*** thread " + which + " looped "
 					//		+ i/100000000 + " times");
-					yield();
+					//yield();
 				}
 				
 			}
@@ -452,7 +452,7 @@ public class KThread {
 	public static void selfTest() {
 		Lib.debug(dbgThread, "Enter KThread.selfTest");
 		
-		st2();
+		st1();
 
 	}
 	
@@ -462,7 +462,7 @@ public class KThread {
 		for(int i=0; i<num; i++){
 			boolean intState = Machine.interrupt().disable();
 			KThread newguy = new KThread(new PingTest(i)).setName("forked thread");
-			ThreadedKernel.scheduler.setPriority(newguy, num+1-i);
+			ThreadedKernel.scheduler.setPriority(newguy, 40);
 			Machine.interrupt().setStatus(intState);
 			newguy.fork();
 		}
@@ -479,11 +479,11 @@ public class KThread {
 		newguy1.fork();
 		
 		KThread newguy2 = new KThread(new PingTest(2)).setName("forked thread");
-		ThreadedKernel.scheduler.setPriority(newguy2, 11);
+		ThreadedKernel.scheduler.setPriority(newguy2, 5);
 		newguy2.fork();
 		
 		KThread newguy3 = new KThread(new PingTest(1)).setName("forked thread");
-		ThreadedKernel.scheduler.setPriority(newguy3, 21);
+		ThreadedKernel.scheduler.setPriority(newguy3, 10);
 		newguy3.fork();
 		
 		Machine.interrupt().setStatus(intState);
@@ -503,9 +503,9 @@ public class KThread {
 	private void updatePriority() {
 		if (this.isIdleThread()) return;
 		if (this.isMainThread()) return;
-		Object test = this.thdSchedState.getClass();
-		Object y = test.getClass();
-		((MultiLevelScheduler.ThreadState) this.thdSchedState).ageValUp();
+//		Object test = this.thdSchedState.getClass();
+//		Object y = test.getClass();
+		this.thdSchedState.ageValUp();
 	}
 
 	private static final char dbgThread = 't';

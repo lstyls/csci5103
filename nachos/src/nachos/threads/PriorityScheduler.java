@@ -48,7 +48,7 @@ public abstract class PriorityScheduler extends Scheduler {
 	/**
 	 * The minimum priority that a thread can have. Do not change this value.
 	 */
-	private final int priorityMinimum = 1;
+	protected final int priorityMinimum = 1;
 	/**
 	 * The maximum priority that a thread can have. Can be specified in config file.
 	 */
@@ -67,7 +67,7 @@ public abstract class PriorityScheduler extends Scheduler {
 		maxWaitTime = 0;
 	}
 		
-	@SuppressWarnings("unused")
+
 	protected long agingTime;
 	
 	protected void setAgingTime(long ageTime) {

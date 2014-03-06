@@ -14,31 +14,82 @@ public class DynamicPriorityScheduler extends PriorityScheduler {
 	}
 
 
-	/* (non-Javadoc)
+	/** 
 	 * @see nachos.threads.PriorityScheduler#newThreadQueue(boolean)
 	 */
 	@Override
 	public PriorityThreadQueue newThreadQueue(boolean transferPriority) {
-		return new DynamicPriorityThreadQueue(transferPriority);
+		return new PriorityThreadQueue(transferPriority);
+	}
+	
+	protected void initThreadState(KThread thread) {
+		thread.thdSchedState = new DynamicPriorityScheduler.ThreadState(thread);
+	}
+	
+	protected class ThreadState extends PriorityScheduler.ThreadState {
+		
+		private long uncountedRunTime;
+		private long uncountedWaitTime;
+		private long lastWaitAgeTime;
+		
+		public ThreadState(KThread thread) {
+			super(thread);
+			
+			this.uncountedRunTime = 0;
+			this.uncountedWaitTime = -1;
+			this.lastWaitAgeTime = 0;
+		}
+		
+		
+		public void ageValUp() {
+			if (this.thread.isIdleThread()) return;
+			int oldPriority = this.getPriority();
+			long curtime = kernel.getTime();
+			long newRunTime = curtime + uncountedRunTime - this.lastScheduled;
+			int increment = (int) (newRunTime/( (long) agingTime));
+			this.uncountedRunTime = newRunTime % agingTime;
+			setFixPriority(thread, increment + oldPriority);
+		}
+		
+		public void ageValDown() {
+			if (this.thread.isIdleThread()) return;
+			int oldPriority = this.getPriority();
+			long curtime = kernel.getTime();
+			if (lastWaitAgeTime < lastEnqueued) lastWaitAgeTime = lastEnqueued;
+			if (lastWaitAgeTime < 0) return;
+			long newWaitTime = curtime + uncountedWaitTime - lastWaitAgeTime;
+			this.uncountedRunTime = newWaitTime % agingTime;
+			int increment = (int) (newWaitTime/((long) agingTime));
+			setFixPriority(thread, oldPriority - increment);
+		}
+		
 	}
 	
 	
-	protected class DynamicPriorityThreadQueue extends PriorityScheduler.PriorityThreadQueue {
+	protected class PriorityThreadQueue extends PriorityScheduler.PriorityThreadQueue {
 
 		private PriorityThreadQueue.ThreadComparator tComp = 
 				new PriorityThreadQueue.ThreadComparator();
 		private java.util.PriorityQueue<KThread> waitQueue =
 				new java.util.PriorityQueue<KThread>(ThreadedKernel.numThreads, tComp);
 		
-		public DynamicPriorityThreadQueue(boolean transferPriority) {
+		KThread main;
+		
+		public PriorityThreadQueue(boolean transferPriority) {
 			super(transferPriority);
 		}
 
+		@Override
 		public void waitForAccess(KThread thread) {
-			Lib.assertTrue(Machine.interrupt().disabled(),
-					"Interrupts not disabled in required critical section.");
-			
-			waitQueue.add(thread);
+			Lib.assertTrue(Machine.interrupt().disabled(), "Interrupts not disabled in critical section.");
+			if (thread.isMainThread()) {
+				this.main = thread;
+			}
+			else {
+				int p = thread.thdSchedState.getPriority();
+				Lib.assertTrue( p>= priorityMinimum && p <= priorityMaximum);
+				waitQueue.add(thread);
+			}
 		}
 
 		public void acquire(KThread thread) {
@@ -53,9 +104,12 @@ public class DynamicPriorityScheduler extends PriorityScheduler {
 			Lib.assertTrue(Machine.interrupt().disabled(),
 					"Interrupts not disabled in required critical section.");
 			
+			if (waitQueue.isEmpty()) return main;
+			updatePriority();
 			return waitQueue.poll();
 		}
 		
+				
 		/* This method iterates over all the threads in the KThread
 		 * readyQueue and removes them from the Queue.  While doing so it
 		 * updates their priorites and adds them to a new queue so the order
@@ -69,7 +123,7 @@ public class DynamicPriorityScheduler extends PriorityScheduler {
 			KThread thread;
 			while (waitQueue.size() != 0){
 				thread = waitQueue.poll();
-				getThreadState(thread).updateDynamicPriority();
+				getThreadState(thread).ageValDown();
 				newQueue.add(thread);
 			}
 			waitQueue = newQueue;
@@ -78,18 +132,4 @@ public class DynamicPriorityScheduler extends PriorityScheduler {
 		
 		
 	}
-
-	/* This method grabs the agingTime used in the Dynamic Scheduler
-	 * from the ThreadedKernel class
-	 */
-	public void setAgingTime(double num) {
-		agingTime = num;
-	}
-	
-	/* This variable will be accessed by the ThreadState class
-	 * in computing effective priorites
-	 */
-	public static double agingTime;
-
-	
 }
