@@ -1,5 +1,8 @@
 package nachos.threads;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+
 import nachos.machine.*;
 
 /**
@@ -23,6 +26,13 @@ public class Lock {
 	/**
 	 * Allocate a new lock. The lock will initially be <i>free</i>.
 	 */
+	
+	private int effPriority;
+	private KThread lockHolder = null;
+	private LinkedList<KThread> waitQueue;
+	//private ThreadQueue waitQueue = ThreadedKernel.scheduler.newThreadQueue(true);
+	
+	
 	public Lock() {
 	}
 
@@ -73,7 +83,4 @@ public class Lock {
 		return (lockHolder == KThread.currentThread());
 	}
 
-	private KThread lockHolder = null;
-	private ThreadQueue waitQueue =
-			ThreadedKernel.scheduler.newThreadQueue(true);
 }
