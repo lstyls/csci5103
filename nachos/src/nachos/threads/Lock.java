@@ -50,8 +50,15 @@ public class Lock {
 
 		boolean intStatus = Machine.interrupt().disable();
 		KThread thread = KThread.currentThread();
-
+		
+		// Log aquisition attempt
+		long curtime = ThreadedKernel.scheduler.kernel.getTime();
+		ThreadedKernel.scheduler.kernel.logprintln(
+				String.format("W,%s,%d,%d,%d", this.toString(), curtime,
+						thread.getID(), thread.thdSchedState.getEffectivePriority()));
+		
 		if (lockHolder != null) {
+			// The thread attempting to acquire will have to block
 			if (ThreadedKernel.usePriorityDonation) {
 				int newEffP = thread.thdSchedState.getEffectivePriority();
 				if (newEffP < effPriority) {
@@ -64,11 +71,19 @@ public class Lock {
 			KThread.sleep();
 		}
 		else {
+			// Lock is available
 			lockHolder = thread;
 			if (ThreadedKernel.usePriorityDonation) {
 				maxPThread = thread;
 				effPriority = thread.thdSchedState.getEffectivePriority();
 			}
+			
+			// Log acquisition
+			curtime = ThreadedKernel.scheduler.kernel.getTime();
+			ThreadedKernel.scheduler.kernel.logprintln(
+					String.format("A,%s,%d,%d,%d", this.toString(), curtime,
+							thread.getID(), thread.thdSchedState.getEffectivePriority()));
+
 		}
 
 		Lib.assertTrue(lockHolder == thread);
@@ -83,7 +98,12 @@ public class Lock {
 		Lib.assertTrue(isHeldByCurrentThread());
 
 		boolean intStatus = Machine.interrupt().disable();
-
+		
+		long curtime = ThreadedKernel.scheduler.kernel.getTime();
+		ThreadedKernel.scheduler.kernel.logprintln(
+				String.format("R,%s,%d,%d,%d", this.toString(), curtime, lockHolder.getID(),
+						lockHolder.thdSchedState.getEffectivePriority()));
+		
 		if (ThreadedKernel.usePriorityDonation) lockHolder.thdSchedState.releaseLock(this);
 		if (!waitQueue.isEmpty()) {
 			// If the thread releasing had the max priority, find next highest in wait queue
@@ -94,6 +114,12 @@ public class Lock {
 			
 			// Update this next lock holder's effective priority
 			if (ThreadedKernel.usePriorityDonation) lockHolder.thdSchedState.updateEP(this);
+
+			// Log acquisition
+			curtime = ThreadedKernel.scheduler.kernel.getTime();
+			ThreadedKernel.scheduler.kernel.logprintln(
+					String.format("A,%s,%d,%d,%d", this.toString(), curtime,
+							lockHolder.getID(), lockHolder.thdSchedState.getEffectivePriority()));
 			
 			// Make the new lock holder runnable
 			lockHolder.ready();
@@ -108,7 +134,15 @@ public class Lock {
 	}
 	
 	private void updateEP() {
+		effPriority = ThreadedKernel.scheduler.priorityMaximum;
+		maxPThread = null;
 		
+		for (KThread thread : waitQueue) {
+			if (thread.thdSchedState.getEffectivePriority() < effPriority) {
+				effPriority = thread.thdSchedState.getEffectivePriority();
+				maxPThread = thread;
+			}
+		}
 	}
 	
 

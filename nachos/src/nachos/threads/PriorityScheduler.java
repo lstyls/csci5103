@@ -304,7 +304,7 @@ public abstract class PriorityScheduler extends Scheduler {
 			
 			if (lastEnqueued > 0) thdTotWait += curtime - lastEnqueued;
 			
-			kernel.logprint(String.format("%d,%d,%d\n", curtime, thread.getID(), priority));
+			kernel.logprint(String.format("S,%d,%d,%d\n", curtime, thread.getID(), effPriority));
 		}
 		
 		/** Age the thread associated with this state upward by some scheduler-dependent method. Default behavior does nothing. */

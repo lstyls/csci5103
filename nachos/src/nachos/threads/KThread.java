@@ -296,7 +296,7 @@ public class KThread {
 		status = statusReady;
 		if (this != idleThread) {
 			readyQueue.waitForAccess(this);
-			this.thdSchedState.logEnqueued();
+			//this.thdSchedState.logEnqueued();
 			
 			/*
 			if(ThreadedKernel.schedulerName.equals("nachos.threads.DynamicPriorityScheduler")){
