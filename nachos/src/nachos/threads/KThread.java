@@ -1,6 +1,7 @@
 package nachos.threads;
 
 import nachos.machine.*;
+import nachos.threads.PriorityScheduler.PriorityThreadQueue;
 
 /**
  * A KThread is a thread that can be used to execute Nachos kernel code. Nachos
@@ -699,7 +700,7 @@ public class KThread {
 	private static int numCreated = 0;
 
 
-	private static ThreadQueue readyQueue = null;
+	private static PriorityThreadQueue readyQueue = null;
 	private static KThread currentThread = null;
 	private static KThread toBeDestroyed = null;
 	private static KThread idleThread = null;

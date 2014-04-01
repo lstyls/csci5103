@@ -27,13 +27,18 @@ public class Lock {
 	 * Allocate a new lock. The lock will initially be <i>free</i>.
 	 */
 	
-	private int effPriority;
+	protected int effPriority;
 	private KThread lockHolder = null;
+	private KThread maxPThread = null;
 	private LinkedList<KThread> waitQueue;
 	//private ThreadQueue waitQueue = ThreadedKernel.scheduler.newThreadQueue(true);
 	
 	
 	public Lock() {
+		if (ThreadedKernel.usePriorityDonation) {
+			effPriority = ThreadedKernel.scheduler.priorityMaximum;
+			waitQueue = new LinkedList<KThread>();
+		}
 	}
 
 	/**
@@ -47,12 +52,23 @@ public class Lock {
 		KThread thread = KThread.currentThread();
 
 		if (lockHolder != null) {
-			waitQueue.waitForAccess(thread);
+			if (ThreadedKernel.usePriorityDonation) {
+				int newEffP = thread.thdSchedState.getEffectivePriority();
+				if (newEffP < effPriority) {
+					effPriority = newEffP;
+					maxPThread = thread;
+					lockHolder.thdSchedState.updateEP(this);				
+				}
+			}
+			waitQueue.addFirst(thread);
 			KThread.sleep();
 		}
 		else {
-			waitQueue.acquire(thread);
 			lockHolder = thread;
+			if (ThreadedKernel.usePriorityDonation) {
+				maxPThread = thread;
+				effPriority = thread.thdSchedState.getEffectivePriority();
+			}
 		}
 
 		Lib.assertTrue(lockHolder == thread);
@@ -68,11 +84,33 @@ public class Lock {
 
 		boolean intStatus = Machine.interrupt().disable();
 
-		if ((lockHolder = waitQueue.nextThread()) != null)
+		if (ThreadedKernel.usePriorityDonation) lockHolder.thdSchedState.releaseLock(this);
+		if (!waitQueue.isEmpty()) {
+			// If the thread releasing had the max priority, find next highest in wait queue
+			if (lockHolder == maxPThread && ThreadedKernel.usePriorityDonation) updateEP();
+			
+			// Get next blocked thread from waitqueue
+			lockHolder = waitQueue.removeLast();
+			
+			// Update this next lock holder's effective priority
+			if (ThreadedKernel.usePriorityDonation) lockHolder.thdSchedState.updateEP(this);
+			
+			// Make the new lock holder runnable
 			lockHolder.ready();
+		}
+		else if (ThreadedKernel.usePriorityDonation) {
+			lockHolder = null;
+			effPriority = ThreadedKernel.scheduler.priorityMaximum;
+		}
+
 
 		Machine.interrupt().restore(intStatus);
 	}
+	
+	private void updateEP() {
+		
+	}
+	
 
 	/**
 	 * Test if the current thread holds this lock.

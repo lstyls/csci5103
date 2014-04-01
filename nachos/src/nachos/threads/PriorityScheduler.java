@@ -3,6 +3,10 @@ package nachos.threads;
 import nachos.machine.*;
 
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.TreeMap;
 
 /**
  * A scheduler that chooses threads based on their priorities.
@@ -218,15 +222,9 @@ public abstract class PriorityScheduler extends Scheduler {
 
 			@Override
 			public int compare(KThread t1, KThread t2) {
-				int p1 = (ThreadedKernel.scheduler.getPriority(t1));
-				int p2 = (ThreadedKernel.scheduler.getPriority(t2));
-				int comp = p1-p2;
-				
-				if (comp < 0) return -1;
-				
-				if (comp > 0) return 1;
-				
-				return 0;
+				int p1 = (ThreadedKernel.scheduler.getEffectivePriority(t1));
+				int p2 = (ThreadedKernel.scheduler.getEffectivePriority(t2));
+				return p1-p2;
 				
 			}
 			
@@ -276,16 +274,24 @@ public abstract class PriorityScheduler extends Scheduler {
 		
 		protected KThread thread;
 		protected int priority;
+		protected int effPriority;
+		private Lock minPriorLock;
 		
+		private HashSet<Lock> locksHeld;
 		
 		public ThreadState(KThread thread) {
 			this.thread = thread;
 			setPriority(priorityDefault);
+			setEffPriority(priorityDefault);
 			arrivalTime = -1;
 			thdTotWait = 0;
 			thdTotRun = 0;
 			lastScheduled = -1;
 			lastEnqueued = -1;
+			
+			if (ThreadedKernel.usePriorityDonation) {
+				locksHeld = new HashSet<Lock>();
+			}
 		}
 				
 		/**
@@ -309,6 +315,30 @@ public abstract class PriorityScheduler extends Scheduler {
 		public void ageValDown() {
 		}
 		
+		public void acquireLock(Lock lock) {
+			if (lock.effPriority < this.effPriority) {
+				setEffPriority(lock.effPriority);
+				minPriorLock = lock;
+			}
+			locksHeld.add(lock);
+		}
+		
+		public void releaseLock(Lock lock) {
+			locksHeld.remove(lock);
+			updateEP(lock);
+		}
+		
+		public void updateEP(Lock lock) {
+			if (lock == minPriorLock)  {
+				minPriorLock = null;
+				effPriority = ThreadedKernel.scheduler.priorityMaximum;
+				for (Lock l : locksHeld) {
+					if (effPriority > l.effPriority) effPriority = l.effPriority;
+					minPriorLock = l;
+				}
+				effPriority = Math.min(priority, effPriority);
+			}
+		}
 		
 		/**	Update waiting statistics when the thread is placed in the queue. 	 */
 		protected void logEnqueued() {
@@ -345,6 +375,14 @@ public abstract class PriorityScheduler extends Scheduler {
 					arrivalTime, thdTotRun+curtime-lastScheduled, thdTotWait, curtime));
 			
 		}
+		
+		public int getEffPriority() {
+			return this.effPriority;
+		}
+		
+		public void setEffPriority(int effPriority) {
+			this.effPriority = effPriority;
+		}
 
 		/** Return priority of associated thread. */
 		public int getPriority() {
@@ -355,7 +393,7 @@ public abstract class PriorityScheduler extends Scheduler {
 		 */
 		public int getEffectivePriority() {
 			// We aren't worrying about donating priority, so this is the same as vanilla priority.
-			return this.getPriority();
+			return this.effPriority;
 		}
 		
 		/**
@@ -369,6 +407,7 @@ public abstract class PriorityScheduler extends Scheduler {
 			 * of allowed bounds because this is checked in the 
 			 * enclosing method. */
 			this.priority = priority;
+			if (!ThreadedKernel.usePriorityDonation) this.effPriority = priority;
 		}
 		
 	}

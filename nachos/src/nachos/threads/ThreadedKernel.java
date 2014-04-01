@@ -150,6 +150,8 @@ public class ThreadedKernel extends Kernel {
 	/** Indicates which self test is to be run as specified in config file. */
 	public static int selfTestNum;
 
+	public static boolean usePriorityDonation;
+	
 	/** Time of Initialization of the Kernel */
 	private long inittime = 0;
 	/** Globally accessible reference to the scheduler. */
