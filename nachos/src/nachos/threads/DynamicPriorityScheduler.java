@@ -128,6 +128,20 @@ public class DynamicPriorityScheduler extends PriorityScheduler {
 			}
 			waitQueue = newQueue;
 		}
+
+		@Override
+		public int getHighestPriority() {
+			int priority;
+			//priority = waitQueue.peek().thdSchedState.getPriority();
+			priority = waitQueue.size();
+			//System.out.println(waitQueue.iterator().next().thdSchedState.getPriority());
+			//System.out.println(waitQueue.iterator().next().thdSchedState.getPriority());
+			//System.out.println(waitQueue.iterator().next().thdSchedState.getPriority());
+			return priority;
+		}
+
+		
+		
 		
 		
 		

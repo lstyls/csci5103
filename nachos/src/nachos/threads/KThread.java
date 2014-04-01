@@ -294,6 +294,7 @@ public class KThread {
 
 		status = statusReady;
 		if (this != idleThread) {
+			System.out.println(this.thdSchedState.getPriority());
 			readyQueue.waitForAccess(this);
 			this.thdSchedState.logEnqueued();
 			
@@ -430,11 +431,57 @@ public class KThread {
 			for (long i=0; i<1000000001; i++) {
 				long j = i%100000000;
 				if (j==0) {
+					System.out.println(currentThread.name);
 					yield();
 				}
 			}
 		}
 	}
+	
+	//Lock tests
+	private static class BusyRunWithYieldL implements Runnable {
+		public void run() {
+			//lock.acquire(currentThread);
+			for (long i=0; i<1000000001; i++) {
+				long j = i%100000000;
+				if (j==0) {
+					System.out.println(currentThread.name);
+					//yield();
+				}
+			}
+			lock.release(currentThread);
+		}
+	}
+	
+	private static class BusyRunWithYieldM implements Runnable {
+		public void run() {
+			//lock.acquire(currentThread);
+			for (long i=0; i<1000000001; i++) {
+				long j = i%100000000;
+				if (j==0) {
+					System.out.println(currentThread.name);
+					//yield();
+				}
+			}
+			lock.release(currentThread);
+		}
+	}
+	
+	private static class BusyRunWithYieldH implements Runnable {
+		public void run() {
+			//lock.acquire(currentThread);
+			for (long i=0; i<1000000001; i++) {
+				long j = i%100000000;
+				if (j==0) {
+					System.out.println(currentThread.name);
+					//yield();
+				}
+			}
+			lock.release(currentThread);
+		}
+	}
+	
+	/// end first lock test
 	
 	private static class BusyRunNoYield implements Runnable {
 		public void run() {
@@ -609,17 +656,34 @@ public class KThread {
 		
 		boolean intState = Machine.interrupt().disable();
 		
-		KThread newguy1 = new KThread(new BusyRunWithYield()).setName("forked thread");
-		ThreadedKernel.scheduler.setPriority(newguy1, 30);
-		newguy1.fork();
+		KThread newguyL = new KThread(new BusyRunWithYieldL()).setName("forked thread L");
+		//ThreadedKernel.scheduler.setPriority(newguy1, 30);
+		//ThreadedKernel.scheduler.initThreadState("forked thread1");
+		//newguy1.thdSchedState.setPriority(30);
+		ThreadedKernel.scheduler.getThreadState(newguyL).setPriority(30);
+		newguyL.fork();
+		lock.acquire(newguyL);
 		
-		KThread newguy2 = new KThread(new BusyRunWithYield()).setName("forked thread");
-		ThreadedKernel.scheduler.setPriority(newguy2, 15);
-		newguy2.fork();
+		KThread newguyM = new KThread(new BusyRunWithYieldM()).setName("forked thread M");
+		//ThreadedKernel.scheduler.setPriority(newguy2, 15);
+		//ThreadedKernel.scheduler.initThreadState(newguy2);
+		ThreadedKernel.scheduler.getThreadState(newguyM).setPriority(15);
+		System.out.println("after aquire m");
+		newguyM.fork();
+		lock.acquire(newguyM);
 		
-		KThread newguy3 = new KThread(new BusyRunWithYield()).setName("forked thread");
-		ThreadedKernel.scheduler.setPriority(newguy3, 1);
-		newguy3.fork();
+		
+		KThread newguyH = new KThread(new BusyRunWithYieldH()).setName("forked thread H");
+		//ThreadedKernel.scheduler.setPriority(newguy3, 1);
+		//ThreadedKernel.scheduler.initThreadState(newguy3);
+		//newguy3.thdSchedState.setPriority(1);
+		ThreadedKernel.scheduler.getThreadState(newguyH).setPriority(1);
+		//lock.acquire(newguyH);
+		System.out.println("right before forks");
+		//newguyL.fork();
+		//newguyM.fork();
+		newguyH.fork();
+		lock.acquire(newguyH);
 		
 		Machine.interrupt().setStatus(intState);
 	}
@@ -662,6 +726,11 @@ public class KThread {
 //		Object y = test.getClass();
 		this.thdSchedState.ageValUp();
 	}
+	
+	public int sendHighestPriority(){
+		int priority = readyQueue.getHighestPriority();
+		return priority;
+	}
 
 	private static final char dbgThread = 't';
 
@@ -698,8 +767,8 @@ public class KThread {
 	/** Number of times the KThread constructor was called. */
 	private static int numCreated = 0;
 
-
-	private static ThreadQueue readyQueue = null;
+	public static FLock lock = new FLock();
+	public static ThreadQueue readyQueue = null;
 	private static KThread currentThread = null;
 	private static KThread toBeDestroyed = null;
 	private static KThread idleThread = null;

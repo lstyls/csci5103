@@ -36,8 +36,10 @@ public class StaticPriorityScheduler extends PriorityScheduler {
 
 		private PriorityThreadQueue.ThreadComparator tComp = 
 				new PriorityThreadQueue.ThreadComparator();
-		private java.util.PriorityQueue<KThread> waitQueue =
+		public java.util.PriorityQueue<KThread> waitQueue =
 				new java.util.PriorityQueue<KThread>(ThreadedKernel.numThreads, tComp);
+		
+		KThread main;
 		
 		public StaticPriorityThreadQueue(boolean transferPriority) {
 			super(transferPriority);
@@ -46,8 +48,14 @@ public class StaticPriorityScheduler extends PriorityScheduler {
 		public void waitForAccess(KThread thread) {
 			Lib.assertTrue(Machine.interrupt().disabled(),
 					"Interrupts not disabled in required critical section.");
-			
-			waitQueue.add(thread);
+			if (thread.isMainThread()) {
+				this.main = thread;
+			}
+			else {
+				int p = thread.thdSchedState.getPriority();
+				Lib.assertTrue( p>= priorityMinimum && p <= priorityMaximum);
+				waitQueue.add(thread);
+			}
 		}
 
 		public void acquire(KThread thread) {
@@ -61,13 +69,26 @@ public class StaticPriorityScheduler extends PriorityScheduler {
 		public KThread nextThread() {
 			Lib.assertTrue(Machine.interrupt().disabled(),
 					"Interrupts not disabled in required critical section.");
-			
+			if (waitQueue.isEmpty()) return main;
 			return waitQueue.poll();
 		}
 		
-		public void updatePriority(){
-			
+		/**
+		 * peak at highest priority thread 
+		 * if empty return 1
+		 */
+		
+		
+		public int getHighestPriority(){
+			int priority;
+			priority = waitQueue.peek().thdSchedState.getPriority();
+			return priority;
 		}
+		
+		
+		public void updatePriority(){
+		}
+		
 
 		
 	}

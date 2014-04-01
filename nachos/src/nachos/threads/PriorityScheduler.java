@@ -243,7 +243,8 @@ public abstract class PriorityScheduler extends Scheduler {
 		public abstract KThread nextThread();
 		
 
-		public void print() {
+		public void print()
+		{
 			Lib.assertTrue(Machine.interrupt().disabled());
 			// implement me (if you want)
 		}
@@ -276,6 +277,7 @@ public abstract class PriorityScheduler extends Scheduler {
 		
 		protected KThread thread;
 		protected int priority;
+		protected int oldPriority;
 		
 		
 		public ThreadState(KThread thread) {
@@ -356,6 +358,29 @@ public abstract class PriorityScheduler extends Scheduler {
 		public int getEffectivePriority() {
 			// We aren't worrying about donating priority, so this is the same as vanilla priority.
 			return this.getPriority();
+		}
+		
+		/**
+		 * Inherits the highest priority from scheduler and
+		 * saves old priority
+		 */
+		
+		protected void inheritPriority(int newPriority){
+			oldPriority = priority;
+			priority = newPriority;
+		}
+		
+		protected void cascadePriority(int newPriority){
+			priority = newPriority;
+		}
+		
+		/**
+		 * function for restoring old priority after
+		 * the lock is released
+		 */
+		
+		protected void restorePriority(){
+			priority =  oldPriority;
 		}
 		
 		/**

@@ -91,7 +91,14 @@ public abstract class ThreadQueue {
      * 			returned from <tt>nextThread()</tt>.
      */
     public abstract void acquire(KThread thread);
-
+    
+    /**
+	 * peak at highest priority thread 
+	 * if empty return 1
+	 */
+    
+    public abstract int getHighestPriority();
+	
     /**
      * Print out all the threads waiting for access, in no particular order.
      */

@@ -170,5 +170,12 @@ public class MultiLevelScheduler extends PriorityScheduler {
 				}
 			}
 		}
+
+		@Override
+		public int getHighestPriority() {
+			return 0;
+		}
+
+		
 	}
 }

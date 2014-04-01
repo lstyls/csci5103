@@ -83,5 +83,13 @@ public class RoundRobinScheduler extends Scheduler {
 	}
 
 	private LinkedList waitQueue = new LinkedList();
+
+	@Override
+	public int getHighestPriority() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	
     }
 }
