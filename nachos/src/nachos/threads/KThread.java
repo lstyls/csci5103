@@ -255,7 +255,7 @@ public class KThread {
 		boolean intStatus = Machine.interrupt().disable();
 
 		currentThread.ready();
-		currentThread.updatePriority();
+		//currentThread.updatePriority();
 		runNextThread();
 
 		Machine.interrupt().restore(intStatus);
@@ -448,6 +448,18 @@ public class KThread {
 		}
 	}
 	
+	private static class BusyLockingRun implements Runnable {
+		public void run() {
+			lock1.acquire();
+			for (long i=1; i<300000001; i++) {
+				long j = i%100000000;
+				if (j==0) {
+					yield();
+				}
+			}
+		}
+	}
+	
 
 	
 	private static class RunThreeNoYield21 implements Runnable {
@@ -553,6 +565,9 @@ public class KThread {
 				st6();
 				break;
 			
+			case 7:
+				st7();
+				break;
 		}
 		
 		yield();
@@ -645,6 +660,26 @@ public class KThread {
 		Machine.interrupt().setStatus(intState);
 	}
 	
+	private static void st7() {
+		lock1 = new Lock();
+		
+		boolean intState = Machine.interrupt().disable();
+		
+		KThread newguy1 = new KThread(new BusyLockingRun()).setName("forked thread");
+		ThreadedKernel.scheduler.setPriority(newguy1, 30);
+		newguy1.fork();
+		
+		KThread newguy2 = new KThread(new BusyLockingRun()).setName("forked thread");
+		ThreadedKernel.scheduler.setPriority(newguy2, 15);
+		newguy2.fork();
+		
+		KThread newguy3 = new KThread(new BusyLockingRun()).setName("forked thread");
+		ThreadedKernel.scheduler.setPriority(newguy3, 1);
+		newguy3.fork();
+		
+		Machine.interrupt().setStatus(intState);
+		}
+	
 	public boolean isIdleThread() {
 		return (this == KThread.idleThread) && (this != null);
 	}
@@ -704,4 +739,9 @@ public class KThread {
 	private static KThread currentThread = null;
 	private static KThread toBeDestroyed = null;
 	private static KThread idleThread = null;
+	
+	
+	private static Lock lock1;
+	private static Lock lock2;
+	private static Lock lock3;
 }

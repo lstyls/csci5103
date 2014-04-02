@@ -31,7 +31,8 @@ public class ThreadedKernel extends Kernel {
 		// Set scheduler to one of the three assignment types as specified in the config file.
 		String schedulerName = Config.getString("ThreadedKernel.scheduler");
 		if (schedulerName.equals("nachos.threads.StaticPriorityScheduler")) {
-			scheduler = (nachos.threads.StaticPriorityScheduler) Lib.constructObject(schedulerName);
+			scheduler = new StaticPriorityScheduler();
+			usePriorityDonation = Config.getBoolean("Locks.usePriorityDonation");
 		}
 		else if (schedulerName.equals("nachos.threads.DynamicPriorityScheduler")) {
 			scheduler = new DynamicPriorityScheduler();
@@ -74,22 +75,24 @@ public class ThreadedKernel extends Kernel {
 		inittime = System.currentTimeMillis();
 
 		/* Initialize logfile */
-		String logFileName = Config.getString("statistics.logFile");
-
-		if (logFileName == null) {
-			logWriter = new PrintWriter(System.out);
-		}
-
-		// Initialize logger.
-		else {
-			try{
-				logWriter = new PrintWriter(new FileWriter(logFileName));
-			}
-			catch (IOException err) {
-				System.err.println("Error creating logfile:");
-				System.err.println(err);
-			}
-		}
+		logWriter = new PrintWriter(System.out);
+		
+//		String logFileName = Config.getString("statistics.logFile");
+//
+//		if (logFileName == null) {
+//			logWriter = new PrintWriter(System.out);
+//		}
+//
+//		// Initialize logger.
+//		else {
+//			try{
+//				logWriter = new PrintWriter(new FileWriter(logFileName));
+//			}
+//			catch (IOException err) {
+//				System.err.println("Error creating logfile:");
+//				System.err.println(err);
+//			}
+//		}
 
 		// TODO: remove commented test code
 		//	logWriter.write("THIS IS A TEST");
@@ -137,7 +140,7 @@ public class ThreadedKernel extends Kernel {
 	 * Terminate this kernel. Never returns.
 	 */
 	public void terminate() {
-		scheduler.logFinalStats();
+		//scheduler.logFinalStats();
 		Machine.halt();
 	}
 
