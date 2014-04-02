@@ -35,10 +35,8 @@ public class Lock {
 	
 	
 	public Lock() {
-		if (ThreadedKernel.usePriorityDonation) {
-			effPriority = ThreadedKernel.scheduler.priorityMaximum;
-			waitQueue = new LinkedList<KThread>();
-		}
+		effPriority = ThreadedKernel.scheduler.priorityMaximum;
+		waitQueue = new LinkedList<KThread>();
 	}
 
 	/**
@@ -64,7 +62,7 @@ public class Lock {
 				if (newEffP < effPriority) {
 					effPriority = newEffP;
 					maxPThread = thread;
-					lockHolder.thdSchedState.updateEP(this);				
+					lockHolder.thdSchedState.updateEP();				
 				}
 			}
 			waitQueue.addFirst(thread);
@@ -76,9 +74,10 @@ public class Lock {
 			if (ThreadedKernel.usePriorityDonation) {
 				maxPThread = thread;
 				effPriority = thread.thdSchedState.getEffectivePriority();
+				lockHolder.thdSchedState.acquireLock(this);
 			}
 			
-			// Log acquisition
+			// Log the acquisition
 			curtime = ThreadedKernel.scheduler.kernel.getTime();
 			ThreadedKernel.scheduler.kernel.logprintln(
 					String.format("A,%s,%d,%d,%d", this.toString(), curtime,
@@ -113,7 +112,7 @@ public class Lock {
 			lockHolder = waitQueue.removeLast();
 			
 			// Update this next lock holder's effective priority
-			if (ThreadedKernel.usePriorityDonation) lockHolder.thdSchedState.updateEP(this);
+			if (ThreadedKernel.usePriorityDonation) lockHolder.thdSchedState.acquireLock(this);
 
 			// Log acquisition
 			curtime = ThreadedKernel.scheduler.kernel.getTime();

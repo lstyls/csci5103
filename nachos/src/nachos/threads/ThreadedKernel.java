@@ -65,8 +65,7 @@ public class ThreadedKernel extends Kernel {
 		ThreadedKernel.numThreads = Config.getInteger("Kernel.numThreads");
 		
 		
-		int ageTime = Config.getInteger("scheduler.agingTime");
-		scheduler.setAgingTime(ageTime);
+
 		
 		int maxPriority = Config.getInteger("scheduler.maxPriorityValue");
 		scheduler.setSchedMaxPriority(maxPriority);

@@ -157,6 +157,17 @@ public abstract class PriorityScheduler extends Scheduler {
 		this.getThreadState(thread).setPriority(priority);
 	}
 	
+	/** Sets the priority of the specified thread. Will throw
+	 * assertion error exception if new priority is outside allowed bounds.	 */
+	public void initPriority(KThread thread, int priority) {
+		Lib.assertTrue(Machine.interrupt().disabled());
+		
+		Lib.assertTrue(priority >= priorityMinimum && 
+				priority <= priorityMaximum);
+		
+		this.getThreadState(thread).initPriority(priority);
+	}
+	
 	/** Sets the priority of the specified thread. Fixes given priority so that
 	 * it falls within allowed bounds.
 	 *  
@@ -316,29 +327,35 @@ public abstract class PriorityScheduler extends Scheduler {
 		}
 		
 		public void acquireLock(Lock lock) {
-			if (lock.effPriority < this.effPriority) {
-				setEffPriority(lock.effPriority);
-				minPriorLock = lock;
-			}
 			locksHeld.add(lock);
+			updateEP(lock);
 		}
 		
 		public void releaseLock(Lock lock) {
 			locksHeld.remove(lock);
-			updateEP(lock);
+			updateEP();
 		}
 		
+		public void updateEP() {
+			// Iterate through locks held to find effective priority
+			minPriorLock = null;
+			effPriority = ThreadedKernel.scheduler.priorityMaximum;
+			for (Lock l : locksHeld) {
+				if (effPriority > l.effPriority) effPriority = l.effPriority;
+				minPriorLock = l;
+			}
+			effPriority = Math.min(priority, effPriority);
+		}
+		
+		
 		public void updateEP(Lock lock) {
-			if (lock == minPriorLock)  {
-				minPriorLock = null;
-				effPriority = ThreadedKernel.scheduler.priorityMaximum;
-				for (Lock l : locksHeld) {
-					if (effPriority > l.effPriority) effPriority = l.effPriority;
-					minPriorLock = l;
-				}
-				effPriority = Math.min(priority, effPriority);
+			// Update priority because the effective priority value of a held lock has decreased
+			if (lock.effPriority < this.effPriority) {
+				setEffPriority(lock.effPriority);
+				this.minPriorLock = lock;
 			}
 		}
+		
 		
 		/**	Update waiting statistics when the thread is placed in the queue. 	 */
 		protected void logEnqueued() {
@@ -382,6 +399,11 @@ public abstract class PriorityScheduler extends Scheduler {
 		
 		public void setEffPriority(int effPriority) {
 			this.effPriority = effPriority;
+		}
+		
+		public void initPriority(int p) {
+			this.effPriority = p;
+			this.priority = p;
 		}
 
 		/** Return priority of associated thread. */
