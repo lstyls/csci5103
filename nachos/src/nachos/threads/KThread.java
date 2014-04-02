@@ -159,35 +159,10 @@ public class KThread {
 			}
 		});
 
-		//ThreadedKernel.scheduler.initThreadState(this);
 		ready();
 
 		Machine.interrupt().restore(intStatus);
 	}
-
-
-//	/* Fork with prespecified priority */
-//	public void fork(int priority) {
-//		Lib.assertTrue(status == statusNew);
-//		Lib.assertTrue(target != null);
-//
-//		Lib.debug(dbgThread,
-//				"Forking thread: " + toString() + " Runnable: " + target);
-//
-//		boolean intStatus = Machine.interrupt().disable();
-//
-//		tcb.start(new Runnable() 	{ 
-//			public void run() 	{ 
-//				runThread();
-//			}
-//		});
-//
-//		ThreadedKernel.scheduler.initThreadState(this);
-//		((StaticPriorityScheduler) ThreadedKernel.scheduler).setPriority(priority);
-//		ready();
-//
-//		Machine.interrupt().restore(intStatus);
-//	}
 
 	private void runThread() {
 		begin();
@@ -426,28 +401,7 @@ public class KThread {
 		Lib.assertTrue(this == currentThread);
 	}
 
-	private static class BusyRunWithYield implements Runnable {
-		public void run() {
-			for (long i=0; i<1000000001; i++) {
-				long j = i%100000000;
-				if (j==0) {
-					yield();
-				}
-			}
-		}
-	}
-	
-	private static class BusyRunNoYield implements Runnable {
-		public void run() {
-			for (long i=0; i<1000000001; i++) {
-				long j = i%100000000;
-				if (j==0) {
-					//yield();
-				}
-			}
-		}
-	}
-	
+		
 	private static class BusyLockingRun30ABAB implements Runnable {
 		public void run() {
 			boolean intState = Machine.interrupt().disable();
@@ -590,76 +544,7 @@ public class KThread {
 	
 
 	
-	private static class RunThreeNoYield21 implements Runnable {
-		public void run() {
-			boolean intState = Machine.interrupt().disable();
-			KThread newthread = new KThread (new RunThreeNoYield11());
-			ThreadedKernel.scheduler.setPriority(newthread, 11);
-			newthread.fork();
-			Machine.interrupt().setStatus(intState);
-			
-			for (long i=0; i<1000000001; i++) {
-				long j = i%100000000;
-				if (j==0) {
-				}
-			}
-		}
-	}
 	
-	
-	private static class RunThreeNoYield11 implements Runnable {
-		public void run() {
-			boolean intState = Machine.interrupt().disable();
-			KThread newthread = new KThread (new BusyRunNoYield());
-			ThreadedKernel.scheduler.setPriority(newthread, 1);
-			newthread.fork();
-			Machine.interrupt().setStatus(intState);
-			
-			for (long i=0; i<1000000001; i++) {
-				long j = i%100000000;
-				if (j==0) {
-				}
-			}
-		}
-	}
-	
-	
-	private static class RunThreeWithYield21 implements Runnable {
-		public void run() {
-			boolean intState = Machine.interrupt().disable();
-			KThread newthread = new KThread (new RunThreeWithYield11());
-			ThreadedKernel.scheduler.setPriority(newthread, 11);
-			newthread.fork();
-			Machine.interrupt().setStatus(intState);
-			
-			for (long i=0; i<1000000001; i++) {
-				long j = i%100000000;
-				if (j==0) {
-					yield();
-				}
-			}
-		}
-	}
-	
-	
-	private static class RunThreeWithYield11 implements Runnable {
-		public void run() {
-			boolean intState = Machine.interrupt().disable();
-			KThread newthread = new KThread (new BusyRunWithYield());
-			ThreadedKernel.scheduler.setPriority(newthread, 1);
-			newthread.fork();
-			Machine.interrupt().setStatus(intState);
-			
-			for (long i=0; i<1000000001; i++) {
-				long j = i%100000000;
-				if (j==0) {
-					yield();
-				}
-			}
-		}
-	}
-
-
 	/**
 	 * Tests whether this module is working.
 	 */
@@ -675,119 +560,16 @@ public class KThread {
 			case 2:
 				st2();
 				break;
-					
-//			
-//			case 3: 
-//				st3();
-//				break;
-//			
-//			case 4: 
-//				st4();
-//				break;
-//				
-//			case 5:
-//				st5();
-//				break;
-//				
-//			case 6:
-//				st6();
-//				break;
-//			
-//			case 7:
-//				st7();
-//				break;
 		}
 		
 		yield();
 	}
 	
-	
-//	/** Self test 1 forks six threads of equal (medium) priority. The threads will not yield
-//	 * while executing. */
-//	private static void st1() {
-//		boolean intState = Machine.interrupt().disable();
-//		for (int i = 0; i<6; i++) {
-//			KThread newthread = new KThread (new BusyRunNoYield()).setName("Forked Thread");
-//			ThreadedKernel.scheduler.setPriority(newthread, 15);
-//			newthread.fork();
-//		}
-//		Machine.interrupt().setStatus(intState);
-//	}
-//	
-//	/** Self test 2 forks six threads of equal (medium) priority. The threads will undergo
-//	 * a CPU burst and then yield, five times each. */
-//	private static void st2() {
-//		boolean intState = Machine.interrupt().disable();
-//		for (int i = 0; i<6; i++) {
-//			KThread newthread = new KThread (new BusyRunWithYield()).setName("Forked Thread");
-//			ThreadedKernel.scheduler.setPriority(newthread, 15);
-//			newthread.fork();
-//		}
-//		Machine.interrupt().setStatus(intState);
-//	}
-//	
-//	/** Self test 3 forks three threads of increasing priority. They race to acquire the CPU
-//	 * and will not yield until they finish executing. */
-//	private static void st3() {
-//		
-//		boolean intState = Machine.interrupt().disable();
-//		
-//		KThread newguy1 = new KThread(new BusyRunNoYield()).setName("forked thread");
-//		ThreadedKernel.scheduler.setPriority(newguy1, 30);
-//		newguy1.fork();
-//		
-//		KThread newguy2 = new KThread(new BusyRunNoYield()).setName("forked thread");
-//		ThreadedKernel.scheduler.setPriority(newguy2, 15);
-//		newguy2.fork();
-//		
-//		KThread newguy3 = new KThread(new BusyRunNoYield()).setName("forked thread");
-//		ThreadedKernel.scheduler.setPriority(newguy3, 1);
-//		newguy3.fork();
-//		
-//		Machine.interrupt().setStatus(intState);
-//	}
-//	
-//	/** Self test 4 forks three threads of increasing priority. They race to acquire the CPU
-//	 * and will perform alternating CPU bursts and yields five times each. */
-//	private static void st4() {
-//		
-//		boolean intState = Machine.interrupt().disable();
-//		
-//		KThread newguy1 = new KThread(new BusyRunWithYield()).setName("forked thread");
-//		ThreadedKernel.scheduler.setPriority(newguy1, 30);
-//		newguy1.fork();
-//		
-//		KThread newguy2 = new KThread(new BusyRunWithYield()).setName("forked thread");
-//		ThreadedKernel.scheduler.setPriority(newguy2, 15);
-//		newguy2.fork();
-//		
-//		KThread newguy3 = new KThread(new BusyRunWithYield()).setName("forked thread");
-//		ThreadedKernel.scheduler.setPriority(newguy3, 1);
-//		newguy3.fork();
-//		
-//		Machine.interrupt().setStatus(intState);
-//	}
-//	
-//	/** Self test 5 forks three threads recursively with increasing priority. The threads
-//	 * do not yield.*/
-//	private static void st5() {
-//		boolean intState = Machine.interrupt().disable();
-//		KThread newguy = new KThread(new RunThreeNoYield21()).setName("forked thread");
-//		ThreadedKernel.scheduler.setPriority(newguy, 21);
-//		newguy.fork();
-//		Machine.interrupt().setStatus(intState);
-//	}
-//	
-//	/** Self test 6 forks three threads recursively with increasing priority. The threads
-//	 * alternately perform computation and yield 5 times.*/
-//	private static void st6() {
-//		boolean intState = Machine.interrupt().disable();
-//		KThread newguy = new KThread(new RunThreeWithYield21()).setName("forked thread");
-//		ThreadedKernel.scheduler.setPriority(newguy, 21);
-//		newguy.fork();
-//		Machine.interrupt().setStatus(intState);
-//	}
-	
+	/**
+	 * Self test one demonstrates solution to priority inversion problem with a single lock.
+	 * Forks of threads with priority Low, Medium, and High in this order, which all attempt to
+	 * acquire a lock. Corresponds with the first example in the assignment description.
+	 */
 	private static void st1() {
 		lockA = new Lock();
 		
@@ -797,18 +579,20 @@ public class KThread {
 		ThreadedKernel.scheduler.initPriority(newguy1, 30);
 		newguy1.fork();
 		
-//		KThread newguy2 = new KThread(new BusyLockingRun()).setName("forked thread");
-//		ThreadedKernel.scheduler.initPriority(newguy2, 15);
-//		newguy2.fork();
-//		
-//		KThread newguy3 = new KThread(new BusyLockingRun()).setName("forked thread");
-//		ThreadedKernel.scheduler.initPriority(newguy3, 1);
-//		newguy3.fork();
-		
 		Machine.interrupt().setStatus(intState);
 		}
 	
-	
+	/**
+	 * Self test two demonstrates solution to priority inversion with two locks. Forks three threads
+	 * in the following order:
+	 * 
+	 * 		1. Low priority thread forks and acquires lock A.
+	 * 		2. Medium priority thread forks. First acquires lock B, then attempts to acquire lock A.
+	 * 		3. High priority thread forks and attempts to acquire lock B.
+	 * 
+	 * With priority donation enabled, the low priority thread will inheret the priority from both medium
+	 * and high priority threads.
+	 */
 	private static void st2() {
 		lockA = new Lock();
 		lockB = new Lock();
@@ -831,16 +615,6 @@ public class KThread {
 		return (this.id == 0);
 	}
 	
-
-	/** Update priority of the thread after running by some scheduler-dependent aging function.
-	 * To be called when the thread is switched off the CPU. */
-	private void updatePriority() {
-		if (this.isIdleThread()) return;
-		if (this.isMainThread()) return;
-//		Object test = this.thdSchedState.getClass();
-//		Object y = test.getClass();
-		this.thdSchedState.ageValUp();
-	}
 
 	private static final char dbgThread = 't';
 

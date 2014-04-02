@@ -63,10 +63,7 @@ public class ThreadedKernel extends Kernel {
 			fileSystem = null;
 
 		ThreadedKernel.numThreads = Config.getInteger("Kernel.numThreads");
-		
-		
-
-		
+				
 		int maxPriority = Config.getInteger("scheduler.maxPriorityValue");
 		scheduler.setSchedMaxPriority(maxPriority);
 		
@@ -76,28 +73,6 @@ public class ThreadedKernel extends Kernel {
 		/* Initialize logfile */
 		logWriter = new PrintWriter(System.out);
 		
-//		String logFileName = Config.getString("statistics.logFile");
-//
-//		if (logFileName == null) {
-//			logWriter = new PrintWriter(System.out);
-//		}
-//
-//		// Initialize logger.
-//		else {
-//			try{
-//				logWriter = new PrintWriter(new FileWriter(logFileName));
-//			}
-//			catch (IOException err) {
-//				System.err.println("Error creating logfile:");
-//				System.err.println(err);
-//			}
-//		}
-
-		// TODO: remove commented test code
-		//	logWriter.write("THIS IS A TEST");
-		//	logWriter.flush();
-
-		// start threading
 		new KThread(null);
 
 		alarm  = new Alarm();

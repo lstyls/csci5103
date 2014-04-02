@@ -23,17 +23,24 @@ import nachos.machine.*;
  * value could change immediately after you read it).
  */
 public class Lock {
-	/**
-	 * Allocate a new lock. The lock will initially be <i>free</i>.
-	 */
+
 	
+	/** Effective priority for the lock holder. */
 	protected int effPriority;
+	
+	/** Point to the lock holder. */
 	private KThread lockHolder = null;
+	
+	/** Point the thread with the maximum priority. Can be waiting or the lock holder. */
 	private KThread maxPThread = null;
+	
+	/** Use a LinkedList to implement FIFO queue for waiting threads. */
 	private LinkedList<KThread> waitQueue;
 	//private ThreadQueue waitQueue = ThreadedKernel.scheduler.newThreadQueue(true);
 	
-	
+	/**
+	 * Allocate a new lock. The lock will initially be <i>free</i>.
+	 */
 	public Lock() {
 		effPriority = ThreadedKernel.scheduler.priorityMaximum;
 		waitQueue = new LinkedList<KThread>();
@@ -57,23 +64,33 @@ public class Lock {
 		
 		if (lockHolder != null) {
 			// The thread attempting to acquire will have to block
+			
+			
 			if (ThreadedKernel.usePriorityDonation) {
 				int newEffP = thread.thdSchedState.getEffectivePriority();
+				// If the new thread has a higher effective priority than the current lock effective priority, 
+				// 		update the effective priority of the lock and signal to the lock holder that there has been a change
 				if (newEffP < effPriority) {
 					effPriority = newEffP;
 					maxPThread = thread;
 					lockHolder.thdSchedState.updateEP();				
 				}
 			}
+			
+			// add to the wait queue and sleep
 			waitQueue.addFirst(thread);
 			KThread.sleep();
 		}
 		else {
-			// Lock is available
+			// Lock is available, so the thread can acquire it.
 			lockHolder = thread;
 			if (ThreadedKernel.usePriorityDonation) {
+				
+				// Update effective priority of lock to be this thread.
 				maxPThread = thread;
 				effPriority = thread.thdSchedState.getEffectivePriority();
+				
+				// Have the acquiring thread add the lock to its set of locks held.
 				lockHolder.thdSchedState.acquireLock(this);
 			}
 			
@@ -98,6 +115,7 @@ public class Lock {
 
 		boolean intStatus = Machine.interrupt().disable();
 		
+		// Print info to kernel
 		long curtime = ThreadedKernel.scheduler.kernel.getTime();
 		ThreadedKernel.scheduler.kernel.logprintln(
 				String.format("R,%s,%d,%d,%d", this.toString(), curtime, lockHolder.getID(),
@@ -132,6 +150,12 @@ public class Lock {
 		Machine.interrupt().restore(intStatus);
 	}
 	
+	
+	/**
+	 * Update the effective priority associated with the lock by iterating through all 
+	 * the threads waiting. To be called when the highest priority thread is the lock 
+	 * holder and it releases the lock.
+	 */
 	private void updateEP() {
 		effPriority = ThreadedKernel.scheduler.priorityMaximum;
 		maxPThread = null;

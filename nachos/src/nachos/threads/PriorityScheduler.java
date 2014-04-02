@@ -3,10 +3,7 @@ package nachos.threads;
 import nachos.machine.*;
 
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.TreeMap;
 
 /**
  * A scheduler that chooses threads based on their priorities.
@@ -326,16 +323,30 @@ public abstract class PriorityScheduler extends Scheduler {
 		public void ageValDown() {
 		}
 		
+		/** To be called by a lock when the thread acquires it. Adds the lock to the thread's set of held locks and updates the 
+		 * thread's effective priority.  */
 		public void acquireLock(Lock lock) {
 			locksHeld.add(lock);
 			updateEP(lock);
 		}
 		
+		/** To be called by a lock when the thread releases it. Removes the lock from thread's set of held locks and updates the thread's
+		 * effective priority if it was the lock granting the thread's current effective priority.
+		 * 
+		 * @param lock
+		 */
 		public void releaseLock(Lock lock) {
 			locksHeld.remove(lock);
-			updateEP();
+			if (minPriorLock != null && lock == minPriorLock) {
+				updateEP();
+			}
 		}
 		
+
+		/**
+		 * Update the effective priority of the thread by iterating through the locks held. To be called
+		 * when the thread releases the lock that was currently granting the highest priority.
+		 */
 		public void updateEP() {
 			// Iterate through locks held to find effective priority
 			minPriorLock = null;
@@ -347,9 +358,12 @@ public abstract class PriorityScheduler extends Scheduler {
 			effPriority = Math.min(priority, effPriority);
 		}
 		
-		
+		/**
+		 * Update the effective priority of the thread. To be called by one of the locks held by the thread when
+		 * that thread's priority has changed.
+		 */
 		public void updateEP(Lock lock) {
-			// Update priority because the effective priority value of a held lock has decreased
+			// Update priority of the thread because the effective priority value of a held lock has increased
 			if (lock.effPriority < this.effPriority) {
 				setEffPriority(lock.effPriority);
 				this.minPriorLock = lock;
@@ -378,9 +392,7 @@ public abstract class PriorityScheduler extends Scheduler {
 		protected void logFinished() {
 			long curtime = kernel.getTime();
 			nfinished++;
-			
-			//Lib.assertTrue(arrivalTime>=0,"Trying to log finish of thread with no arrival time.");
-			
+						
 			if (arrivalTime<=0) return;
 			
 			totalTurnTime += curtime - arrivalTime;
