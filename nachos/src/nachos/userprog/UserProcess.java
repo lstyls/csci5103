@@ -345,10 +345,28 @@ public class UserProcess {
 	Lib.assertNotReached("Machine.halt() did not halt machine!");
 	return 0;
     }
+    private int handleExit(int a0){
+    	System.out.println(getName()+","+"exit"+","+getPid()+","+a0);
+    	//Machine.halt();
+    	//Lib.assertNotReached("Machine.halt() did not halt machine!");
+    	return 0;
+    }
+    public void setName(String process){
+    	processName = process;
+    }
+    public String getName(){
+    	return processName;
+    }
+    public void setPid(int value){
+    	pid = value;
+    }
+    public int getPid(){
+    	return pid;
+    }
 
 
     private static final int
-        syscallHalt = 0,
+    syscallHalt = 0,
 	syscallExit = 1,
 	syscallExec = 2,
 	syscallJoin = 3,
@@ -391,6 +409,8 @@ public class UserProcess {
 	switch (syscall) {
 	case syscallHalt:
 	    return handleHalt();
+	case syscallExit:
+		return handleExit(a0);
 
 
 	default:
@@ -432,6 +452,8 @@ public class UserProcess {
 
     /** The program being run by this process. */
     protected Coff coff;
+    protected String processName;
+    protected int pid;
 
     /** This process's page table. */
     protected TranslationEntry[] pageTable;

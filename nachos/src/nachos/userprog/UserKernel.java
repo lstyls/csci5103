@@ -39,13 +39,14 @@ public class UserKernel extends ThreadedKernel {
 	System.out.println("will be echoed until q is typed.");
 
 	char c;
-
+	
 	do {
 	    c = (char) console.readByte(true);
 	    console.writeByte(c);
 	}
 	while (c != 'q');
-
+	System.out.println("");
+	System.out.println("End of SelfTest()");
 	System.out.println("");
     }
 
@@ -92,12 +93,25 @@ public class UserKernel extends ThreadedKernel {
     public void run() {
 	super.run();
 
-	UserProcess process = UserProcess.newUserProcess();
 	
-	String shellProgram = Machine.getShellProgramName();	
-	Lib.assertTrue(process.execute(shellProgram, new String[] { }));
-
+	
+	String shellPrograms = Machine.getShellProgramName();
+	String[] programs = shellPrograms.split(":|\\,");
+	int amountToRun = Integer.parseInt(programs[0]);
+	for (int x=1;x<programs.length; x++){
+		for (int y=0;y<amountToRun;y++){
+			UserProcess process = UserProcess.newUserProcess();
+			process.setName(programs[x]);
+			process.setPid(getNextPid());
+			Lib.assertTrue(process.execute(programs[x], new String[] { }));
+		}
+	}
 	KThread.currentThread().finish();
+	
+    }
+    //get next pid 
+    public int getNextPid(){
+    	return PID++;
     }
 
     /**
@@ -109,6 +123,7 @@ public class UserKernel extends ThreadedKernel {
 
     /** Globally accessible reference to the synchronized console. */
     public static SynchConsole console;
+    public static int PID = 0;
 
     // dummy variables to make javac smarter
     private static Coff dummy1 = null;

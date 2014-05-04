@@ -30,6 +30,12 @@ public final class Processor {
      */
     public Processor(Privilege privilege, int numPhysPages) {
 	System.out.print(" processor");
+	//Get page size from nachos_process.conf
+	System.out.println("");
+	System.out.println("Page Size from Config File:");
+	pageSize = Integer.decode(Config.getString("Processor.pageSize"));
+	System.out.println(pageSize);
+	maxPages = (int) (0x100000000L / pageSize);
 
 	this.privilege = privilege;
 	privilege.processor = new ProcessorPrivilege();
@@ -44,7 +50,7 @@ public final class Processor {
 
 	for (int i=0; i<numUserRegisters; i++)
 	    registers[i] = 0;
-
+	
 	mainMemory = new byte[pageSize * numPhysPages];
 
 	if (usingTLB) {
@@ -548,9 +554,10 @@ public final class Processor {
     private TranslationEntry[] translations;
 
     /** Size of a page, in bytes. */
-    public static final int pageSize = 0x400;
+    public static int pageSize;
     /** Number of pages in a 32-bit address space. */
-    public static final int maxPages = (int) (0x100000000L / pageSize);
+    //public static final int maxPages = (int) (0x100000000L / pageSize);
+    public static int maxPages;
     /** Number of physical pages in memory. */
     private int numPhysPages;
     /** Main memory for user programs. */

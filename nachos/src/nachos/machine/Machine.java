@@ -371,7 +371,7 @@ public final class Machine {
      */
     public static String getShellProgramName() {
 	if (shellProgramName == null)
-	    shellProgramName = Config.getString("Kernel.shellProgram");
+	    shellProgramName = Config.getString("Kernel.shellPrograms");
 
 	Lib.assertTrue(shellProgramName != null);
 	return shellProgramName;

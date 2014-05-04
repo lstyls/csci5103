@@ -1,27 +1,21 @@
 # GNU Makefile for building user programs to run on top of Nachos
 #
-# Things to be aware of:
-#
+# NOTE:
 #    The value of the ARCHDIR environment variable must be set before using
-#	this makefile. If you are using an instructional machine, this should
-#	be automatic. However, if you are not using an instructional machine,
-#	you need to point ARCHDIR at the cross-compiler directory, e.g.
-#		setenv ARCHDIR ../mips-x86.win32-xgcc
-
-# you need to point to the right executables
-GCCDIR = $(ARCHDIR)/mips-
+#    this makefile.
 
 ASFLAGS = -mips1
 CPPFLAGS =
-CFLAGS = -O2 -B$(GCCDIR) -G 0 -Wa,-mips1 -nostdlib -ffreestanding
+CFLAGS = -O2 -B$(ARCHDIR) -G 0 -Wa,-mips1 -nostdlib -ffreestanding
 LDFLAGS = -s -T script -N -warn-common -warn-constructors -warn-multiple-gp
 
-CC = $(GCCDIR)gcc
-AS = $(GCCDIR)as
-LD = $(GCCDIR)ld
-CPP = $(GCCDIR)cpp
-AR = $(GCCDIR)ar
-RANLIB = $(GCCDIR)ranlib
+# Point to the MIPS-specific executables
+CC = $(ARCHDIR)/mips-gcc
+AS = $(ARCHDIR)/mips-as
+LD = $(ARCHDIR)/mips-ld
+CPP = $(ARCHDIR)/mips-cpp
+AR = $(ARCHDIR)/mips-ar
+RANLIB = $(ARCHDIR)/mips-ranlib
 
 STDLIB_H = stdio.h stdlib.h ag.h
 STDLIB_C = stdio.c stdlib.c
@@ -30,7 +24,7 @@ STDLIB_O = start.o stdio.o stdlib.o
 LIB = assert atoi printf readline stdio strncmp strcat strcmp strcpy strlen memcpy memset
 NLIB = libnachos.a
 
-TARGETS = halt sh matmult sort echo cat cp mv rm type #chat chatserver
+TARGETS = safematmult halt sh matmult sort echo cat cp mv rm type #chat chatserver
 
 .SECONDARY: $(patsubst %.c,%.o,$(wildcard *.c))
 

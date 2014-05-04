@@ -50,8 +50,7 @@ public class AutoGrader {
 	run();
     }
 
-    @SuppressWarnings("unchecked")
-	private void extractArguments(String[] args) {
+    private void extractArguments(String[] args) {
 	String testArgsString = Config.getString("AutoGrader.testArgs");
 	if (testArgsString == null) {
 		testArgsString = "";
