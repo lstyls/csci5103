@@ -1,6 +1,7 @@
 package nachos.threads;
 
 import nachos.machine.*;
+import nachos.userprog.UThread;
 
 /**
  * Uses the hardware timer to provide preemption, and to allow threads to sleep
@@ -27,7 +28,7 @@ public class Alarm {
      * that should be run.
      */
     public void timerInterrupt() {
-	KThread.currentThread().yield();
+	UThread.yield();
     }
 
     /**

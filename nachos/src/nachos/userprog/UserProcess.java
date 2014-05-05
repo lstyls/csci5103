@@ -51,9 +51,11 @@ public class UserProcess {
 	public boolean execute(String name, String[] args) {
 		if (!load(name, args))
 			return false;
-
+		
 		new UThread(this).setName(name).fork();
-
+		
+		kernel.allocator.restore(numPages);
+		
 		return true;
 	}
 
@@ -287,6 +289,8 @@ public class UserProcess {
 			Lib.debug(dbgProcess, "\tinsufficient physical memory");
 			return false;
 		}
+		
+		kernel.allocator.request(numPages);
 
 		// load sections
 		for (int s=0; s<coff.getNumSections(); s++) {
@@ -468,4 +472,7 @@ public class UserProcess {
 
 	private static final int pageSize = Processor.pageSize;
 	private static final char dbgProcess = 'a';
+	
+	/** Pointer to the kernel/ */
+	protected UserKernel kernel;
 }
